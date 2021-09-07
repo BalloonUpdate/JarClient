@@ -1,0 +1,2 @@
+server: http://127.0.0.1:801/index.php
+auto_exit: false
