@@ -1,15 +1,6 @@
-//@file:JvmName("SimpleFileObject")
 package com.github.asforest.util
 
-abstract class SimpleFileObject
-{
-    var name: String
-
-    constructor(name: String)
-    {
-        this.name = name
-    }
-}
+abstract class SimpleFileObject(var name: String)
 
 class SimpleDirectory: SimpleFileObject
 {

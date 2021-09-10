@@ -1,4 +1,3 @@
-//@file:JvmName("BasicMode")
 package com.github.asforest.workmode
 
 import com.github.asforest.util.FileObj
@@ -9,7 +8,7 @@ import java.lang.RuntimeException
 
 typealias OnScanCallback = (file: FileObj) -> Unit
 
-abstract class BasicMode
+abstract class AbstractMode
 {
     val regexes: List<String>
     val base: FileObj
@@ -25,6 +24,9 @@ abstract class BasicMode
         this.template = template
     }
 
+    /**
+     * 将一个文件文件或者目录标记为旧文件
+     */
     protected fun markAsOld(file: FileObj)
     {
         if(file.isDirectory)
@@ -42,6 +44,9 @@ abstract class BasicMode
         }
     }
 
+    /**
+     * 将一个文件文件或者目录标记为新文件
+     */
     protected fun markAsNew(node: SimpleFileObject, dir: FileObj)
     {
         if(node is SimpleDirectory)
@@ -55,7 +60,7 @@ abstract class BasicMode
         }
     }
 
-    /** 测试指定的目录是否能通过正则表达式的匹配
+    /** 测试指定的目录是否能通过路径匹配
      * @param path 需要测试的相对路径字符串
      * @return 是否通过了匹配
      */

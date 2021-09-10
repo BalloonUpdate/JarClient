@@ -8,9 +8,9 @@ plugins {
 }
 
 val timestamp: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(Date())
-val mainClassPath = "com.github.asforest.McFileUpdateMain"
+val mainClassPath = "com.github.asforest.LittleClientMain"
 group = "com.github.asforest"
-version = "0.0.2"
+version = "0.0.3"
 
 repositories {
 //    maven { setUrl("http://maven.aliyun.com/nexus/content/groups/public/") }
@@ -56,12 +56,18 @@ tasks.jar {
     // 复制依赖库
     from(configurations.runtimeClasspath.get().map {
         println("- "+it.name)
-        if (it.isDirectory) it else zipTree(it).matching { exclude("*") }
+        if (it.isDirectory) it else zipTree(it)//.matching { exclude("*") }
     })
+
+    // 打包assets目录里的文件
+    from("assets")
 
     // 打包源代码
     sourceSets.main.get().allSource.sourceDirectories.map {
         if(it.name != "resources")
             from(it) {into("sources/"+it.name) }
     }
+
+    // 设置输出路径
+    destinationDirectory.set(File(project.buildDir, "production"))
 }

@@ -1,2 +1,10 @@
+# 更新服务器的地址，这里的写法和正式版的api一样
+# 可以直接从正式版的配置文件里复制过来用
 server: http://127.0.0.1:801/index.php
+
+# 更新完是否自动退出，还是手动退出
 auto_exit: false
+
+# 是否检查.minecraft目录的存在
+# 设置为false可以跳过检查，直接启动
+minecraft_check: true

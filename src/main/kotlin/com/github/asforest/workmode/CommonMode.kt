@@ -12,7 +12,7 @@ import com.github.asforest.util.SimpleFileObject
  * 不匹配的文件会被忽略掉(不做任何变动)
  * 匹配的文件会与服务器进行同步
  */
-class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleFileObject>) : BasicMode(regexes, target, template)
+class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleFileObject>) : AbstractMode(regexes, target, template)
 {
     override fun compare(onScan: ((file: FileObj) -> Unit)?)
     {

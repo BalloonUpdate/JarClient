@@ -2,13 +2,12 @@ package com.github.asforest.window
 
 import javax.swing.*
 
-
 class MainWin
 {
-    var window = JFrame()
-    var stateLabel = JLabel()
-    var progressBar1 = JProgressBar()
-    var progressBar2 = JProgressBar()
+    private var window = JFrame()
+    private var stateLabel = JLabel()
+    private var progressBar1 = JProgressBar()
+    private var progressBar2 = JProgressBar()
 
     var titleTextSuffix = ""
 
@@ -35,32 +34,50 @@ class MainWin
             add(progressBar2.apply { setBounds(60, 65, 240, 25) })
         }
 
-        progressBar1.isStringPainted = true //显示进度字符串
-        progressBar1.maximum = 1000 //设置进度条最大值
-        progressBar2.isStringPainted = true //显示进度字符串
-        progressBar2.maximum = 1000 //设置进度条最大值
+        progressBar1.isStringPainted = true // 用字符串代替进度百分比
+        progressBar1.maximum = 1000 // 设置进度条最大值
+        progressBar2.isStringPainted = true // 用字符串代替进度百分比
+        progressBar2.maximum = 1000 // 设置进度条最大值
     }
 
+    /**
+     * 进度条上方的文本
+     */
     var stateText: String
         get() = stateLabel.text
         set(value) = run { stateLabel.text = value; stateLabel.toolTipText = value }
 
+    /**
+     * 上方进度条的值
+     */
     var progress1value: Int
         get() = progressBar1.value
         set(value) = run { progressBar1.value = value }
 
+    /**
+     * 下方进度条的值
+     */
     var progress2value: Int
         get() = progressBar2.value
         set(value) = run { progressBar2.value = value }
 
+    /**
+     * 上方进度条的文本
+     */
     var progress1text: String
         get() = progressBar1.string
         set(value) = run { progressBar1.string = value }
 
+    /**
+     * 下方进度条的值
+     */
     var progress2text: String
         get() = progressBar2.string
         set(value) = run { progressBar2.string = value }
 
+    /**
+     * 标题栏文字
+     */
     var titleText: String
         get() = window.title
         set(value) = run { window.title = value + titleTextSuffix }

@@ -1,3 +1,3 @@
 
-rootProject.name = "McFileUpdate"
+rootProject.name = "LittleClient"
 
