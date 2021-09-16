@@ -55,7 +55,7 @@ class FileObj
             if(!exists)
                 file.createNewFile()
             FileOutputStream(file).use {
-                it.write(content.encodeToByteArray())
+                it.write(value.encodeToByteArray())
             }
         }
 
