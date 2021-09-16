@@ -1,0 +1,33 @@
+  
+name: Build Release
+
+on:
+  push:
+    tags: 
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+
+      - name: Gradle Build
+        uses: gradle/gradle-build-action@v1.5.1
+        with:
+          arguments: jar
+      
+      - name: Publish Release
+        uses: xresloader/upload-to-github-release@v1.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          file: build/production/*
+          draft: false
+          tags: true        

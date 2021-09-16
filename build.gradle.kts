@@ -2,15 +2,19 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Date
 import java.text.SimpleDateFormat
 
+val gitTagName: String? get() = Regex("(?<=refs/tags/).*").find(System.getenv("GITHUB_REF") ?: "")?.value
+val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
+val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
+
+val mainClassPath = "com.github.asforest.LittleClientMain"
+
+group = "com.github.asforest"
+version = gitTagName ?: "0.0.0"
+
 plugins {
     kotlin("jvm") version "1.5.10"
     application
 }
-
-val timestamp: String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(Date())
-val mainClassPath = "com.github.asforest.LittleClientMain"
-group = "com.github.asforest"
-version = "0.0.3"
 
 repositories {
 //    maven { setUrl("http://maven.aliyun.com/nexus/content/groups/public/") }
@@ -21,10 +25,6 @@ dependencies {
 //    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.yaml:snakeyaml:1.29")
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
-
-//    val log4j = "2.14.1"
-//    implementation("org.apache.logging.log4j:log4j-api:$log4j")
-//    implementation("org.apache.logging.log4j:log4j-core:$log4j")
 
     // implementation(fileTree("libs") {include("*.jar")})
 
@@ -50,7 +50,11 @@ tasks.jar {
     manifest {
         attributes("Main-Class" to mainClassPath)
         attributes("Compile-Time" to timestamp)
-        attributes("Application-Version" to archiveVersion)
+        attributes("Application-Version" to archiveVersion.get())
+        attributes("Author" to "Asforest")
+        attributes("Git-Commit" to (gitCommitSha ?: ""))
+        attributes("Compile-Time" to timestamp)
+        attributes("Compile-Time-Ms" to System.currentTimeMillis())
     }
 
     // 复制依赖库
