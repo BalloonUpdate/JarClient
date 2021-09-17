@@ -12,16 +12,21 @@ abstract class AbstractMode
 {
     val regexes: List<String>
     val base: FileObj
-    val target: FileObj
-    val template: Array<SimpleFileObject>
+    val local: FileObj
+    val remote: Array<SimpleFileObject>
     val result: Difference = Difference()
 
-    constructor(regexes: List<String>, target: FileObj, template: Array<SimpleFileObject>)
+    /**
+     * @param regexes 要比较的路径
+     * @param local 要比较的本地文件
+     * @param remote 要比较的远程文件
+     */
+    constructor(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>)
     {
         this.regexes = regexes
-        this.base = target
-        this.target = target
-        this.template = template
+        this.base = local
+        this.local = local
+        this.remote = remote
     }
 
     /**

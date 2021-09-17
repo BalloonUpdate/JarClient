@@ -92,14 +92,14 @@ object LittleClientMain
         // 对比文件差异
         val regexes = indexResponse.paths.asList()
         val targetDirectory = (if(!EnvUtil.isPackaged) workDir + "download" else workDir).apply { mkdirs() }
-        val template = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
+        val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
 
         // 文件对比进度条
         val fileCount = FileUtil.countFiles(targetDirectory)
         var scannedCount = 0
 
         // 开始文件对比过程
-        val diff = CommonMode(regexes, targetDirectory, template)() {
+        val diff = CommonMode(regexes, targetDirectory, remoteFiles)() {
             scannedCount += 1
             window.progress1text = "正在检查资源..."
             window.stateText = it.name

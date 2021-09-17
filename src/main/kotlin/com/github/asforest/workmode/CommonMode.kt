@@ -12,27 +12,33 @@ import com.github.asforest.util.SimpleFileObject
  * 不匹配的文件会被忽略掉(不做任何变动)
  * 匹配的文件会与服务器进行同步
  */
-class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleFileObject>) : AbstractMode(regexes, target, template)
+class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>) : AbstractMode(regexes, local, remote)
 {
     override fun compare(onScan: ((file: FileObj) -> Unit)?)
     {
-        findOutNews(target, template, base, onScan)
+        findOutNews(local, remote, base, onScan)
         LogSys.debug("-------------------")
-        findOutOlds(target, template, base, onScan)
+        findOutOlds(local, remote, base, onScan)
     }
 
     /** 扫描需要下载的文件(不包括被删除的)
-     * @param target 要拿来进行对比本地目录对象
-     * @param template 与之对比用的模板对象
-     * @param base 基准目录，用于计算相对路径
+     * @param local 要拿来进行对比的本地目录
+     * @param remote 要拿来进行对比的远程目录
+     * @param base 基准目录，用于计算相对路径（一般等于local）
+     * @param onScan 扫描回调，用于报告md5的计算进度
      */
-    private fun findOutNews(target: FileObj, template: Array<SimpleFileObject>, base: FileObj, onScan: OnScanCallback?, indent: String ="")
-    {
-        for (r in template)
+    private fun findOutNews(
+        local: FileObj,
+        remote: Array<SimpleFileObject>,
+        base: FileObj,
+        onScan: OnScanCallback?,
+        indent: String =""
+    ) {
+        for (r in remote)
         {
-            val l = target + r.name // 此文件可能不存在
+            val l = local + r.name // 此文件可能不存在
             val direct = test(l.relativizedBy(base)) // direct=true时,indirect必定为true
-            val indirect = checkIndirectMatches(r, target.relativizedBy(base), indent)
+            val indirect = checkIndirectMatches(r, local.relativizedBy(base), indent)
 
             val flag = (if(direct) "+" else (if(indirect) "-" else " "))
 
@@ -45,22 +51,22 @@ class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleF
 
             if(l.exists) // 文件存在的话要进行进一步判断
             {
-                if(r is SimpleDirectory) // 模板中的文件是一个目录
+                if(r is SimpleDirectory) // 远程文件是一个目录
                 {
-                    if(l.isFile) // 本地文件和模板中的文件类型对不上
+                    if(l.isFile) // 本地文件和远程文件的文件类型对不上
                     {
                         markAsOld(l)
                         markAsNew(r, l)
-                    } else { // 本地文件和模板中的文件都是目录，则进行进一步判断
+                    } else { // 本地文件和远程文件都是目录，则进行进一步判断
                         findOutNews(l, r.files, base, onScan, "$indent    ")
                     }
-                } else if(r is SimpleFile) { // 模板中的文件是一个文件
-                    if(l.isFile) // 本地文件和模板中的文件都是文件，则对比校验
+                } else if(r is SimpleFile) { // 远程文件是一个文件
+                    if(l.isFile) // 本地文件和远程文件都是文件，则对比校验
                     {
                         val lsha1 = l.sha1
                         if(lsha1 != r.hash)
                         {
-                            LogSys.debug("   "+indent+"Hash not matched: L: " + lsha1 + "   R: " + r.hash)
+                            LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
                             markAsOld(l)
                             markAsNew(r, l)
                         }
@@ -77,12 +83,18 @@ class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleF
     }
 
     /** 扫描需要删除的文件
-     * @param target 要拿来进行对比本地目录对象
-     * @param template 与之对比用的模板对象
-     * @param base 基准目录，用于计算相对路径
+     * @param local 要拿来进行对比的本地目录
+     * @param remote 要拿来进行对比的远程目录
+     * @param base 基准目录，用于计算相对路径（一般等于local）
+     * @param onScan 扫描回调，用于报告md5的计算进度
      */
-    private fun findOutOlds(target: FileObj, template: Array<SimpleFileObject>, base: FileObj, onScan: OnScanCallback?, indent: String ="")
-    {
+    private fun findOutOlds(
+        local: FileObj,
+        remote: Array<SimpleFileObject>,
+        base: FileObj,
+        onScan: OnScanCallback?,
+        indent: String =""
+    ) {
         fun get(name: String, list: Array<SimpleFileObject>): SimpleFileObject?
         {
             for (n in list)
@@ -91,11 +103,11 @@ class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleF
             return null
         }
 
-        for (l in target.files)
+        for (l in local.files)
         {
-            val r = get(l.name, template) // 参数模板中的对应对象，可能会返回None
-            val direct = test(l.relativizedBy(base)) // direct=true时,indirect必定为true
-            val indirect = checkIndirectMatches(l, target.relativizedBy(base), indent)
+            val r = get(l.name, remote) // 获取对应远程文件，可能会返回None
+            val direct = test(l.relativizedBy(base)) // direct=true时, indirect必定为true
+            val indirect = checkIndirectMatches(l, local.relativizedBy(base), indent)
 
             val flag = (if(direct) "+" else (if(indirect) "-" else " "))
 
@@ -105,15 +117,15 @@ class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleF
 
             if(direct)
             {
-                if(r!=null) // 如果模板中也有这个文件
+                if(r!=null) // 如果远程文件存在
                 {
                     if(l.isDirectory && r is SimpleDirectory)
                         findOutOlds(l, r.files, base, onScan, "$indent    ")
-                } else { // 模板中没有这个文件，就直接删掉好了
+                } else { // 远程文件不存在，就直接删掉好了
                     markAsOld(l)
                 }
             } else if(indirect) { // 此时direct必定为false,且l一定是个目录
-                if(r!=null) // 如果模板中也有这个文件。如果没有，则不需要进行进一步判断，直接跳过即可
+                if(r!=null) // 如果没有这个远程文件，则不需要进行进一步判断，直接跳过即可
                     findOutOlds(l, (r as SimpleDirectory).files, base, onScan, "$indent    ")
             }
         }
@@ -121,13 +133,12 @@ class CommonMode(regexes: List<String>, target: FileObj, template: Array<SimpleF
 
     private fun checkIndirectMatches(file: FileObj, parent: String, indent: String =""): Boolean
     {
-        val parent1 = if(parent == "." || parent == "./") "" else  parent
+        val parent1 = if(parent == "." || parent == "./") "" else parent
         val path = parent1 + (if(parent1 != "") "/" else "") + file.name
 
-        var result: Boolean
+        var result = false
         if(file.isDirectory)
         {
-            result = false
             for (f in file.files)
                 result = result || checkIndirectMatches(f, path, "$indent    ")
         } else {
