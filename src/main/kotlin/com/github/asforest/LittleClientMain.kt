@@ -8,6 +8,7 @@ import com.github.asforest.util.*
 import com.github.asforest.util.HttpUtil.httpDownload
 import com.github.asforest.util.HttpUtil.httpFetch
 import com.github.asforest.window.MainWin
+import com.github.asforest.workmode.AbstractMode
 import com.github.asforest.workmode.CommonMode
 import okhttp3.*
 import org.yaml.snakeyaml.Yaml
@@ -62,8 +63,9 @@ object LittleClientMain
         // 配置文件
         val config = readConfigContent(workDir, "config.yml")
         val server = readFromConfig<String>(config, "server") ?: throw ConfigFileException("配置文件中的server选项无效")
-        val autoExit = readFromConfig<Boolean>(config, "auto_exit") ?: false
-        val minecraftCheck = readFromConfig<Boolean>(config, "minecraft_check") ?: true
+        val autoExit = readFromConfig<Boolean>(config, "auto-exit") ?: false
+        val minecraftCheck = readFromConfig<Boolean>(config, "minecraft-check") ?: true
+        val versionCache = readFromConfig<String>(config, "version-cache") ?: ""
 
         // .minecraft目录检测
         if(EnvUtil.isPackaged && minecraftCheck && ".minecraft" !in workDir)
@@ -85,78 +87,103 @@ object LittleClientMain
 
         // 等待服务器返回最新文件结构数据
         window.stateText = "正在获取资源更新..."
-        val updateInfo = parseYaml<List<Any>>(httpFetch(client, indexResponse.updateUrl))
+        val rawData = httpFetch(client, indexResponse.updateUrl)
+        val updateInfo = parseYaml<List<Any>>(rawData)
         if(indexResponse.mode != "common")
             throw NotSupportedWorkModeException("不支持的工作模式: ${indexResponse.mode}, 工作模式只支持common")
 
-        // 对比文件差异
-        val regexes = indexResponse.paths.asList()
-        val targetDirectory = (if(!EnvUtil.isPackaged) workDir + "download" else workDir).apply { mkdirs() }
-        val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
+        // 使用版本缓存
+        var isVersionOutdate = true
+        val versionFile = workDir + versionCache
 
-        // 文件对比进度条
-        val fileCount = FileUtil.countFiles(targetDirectory)
-        var scannedCount = 0
-
-        // 开始文件对比过程
-        val diff = CommonMode(regexes, targetDirectory, remoteFiles)() {
-            scannedCount += 1
-            window.progress1text = "正在检查资源..."
-            window.stateText = it.name
-            window.progress1value = ((scannedCount/fileCount.toFloat())*1000).toInt()
-        }
-        window.progress1value = 0
-
-        // 输出差异信息
-        LogSys.info("----------")
-        diff.oldFiles.forEach { LogSys.info("旧文件: $it") }
-        LogSys.info("----------")
-        diff.oldFolders.forEach { LogSys.info("旧目录: $it") }
-        LogSys.info("----------")
-        diff.newFiles.forEach { LogSys.info("新文件: ${it.key}") }
-        LogSys.info("----------")
-        diff.newFolders.forEach { LogSys.info("新目录: $it") }
-        LogSys.info("----------")
-        LogSys.info("旧文件: "+diff.oldFiles.size)
-        LogSys.info("旧目录: "+diff.oldFolders.size)
-        LogSys.info("新文件: "+diff.newFiles.size)
-        LogSys.info("新目录: "+diff.newFolders.size)
-
-        // 删除旧文件和旧目录，还有创建新目录
-        diff.oldFiles.map { (targetDirectory + it) }.forEach { it.delete() }
-        diff.oldFolders.map { (targetDirectory + it) }.forEach { it.delete() }
-        diff.newFolders.map { (targetDirectory + it) }.forEach { it.mkdirs() }
-
-        // 下载新文件
-        var totalBytes: Long = 0
-        var totalBytesDownloaded: Long = 0
-        var downloadedCount = 0
-        diff.newFiles.values.forEach { totalBytes += it }
-
-        // 开始下载
-        for ((relativePath, lengthExpected) in diff.newFiles)
+        if(versionCache.isNotEmpty())
         {
-            val url = indexResponse.updateSource + relativePath
-            val file = targetDirectory + relativePath
-
-            httpDownload(client, url, file, lengthExpected) { packageLength, received, total ->
-                totalBytesDownloaded += packageLength
-                val currentProgress = received / total.toFloat()*100
-                val totalProgress = totalBytesDownloaded / totalBytes.toFloat()*100
-
-                val currProgressInString = String.format("%.1f", currentProgress)
-                val totalProgressInString = String.format("%.1f", totalProgress)
-
-                window.stateText = file.name
-                window.progress1value = (currentProgress*10).toInt()
-                window.progress2value = (totalProgress*10).toInt()
-                window.progress1text = file.name.run { if(length>10) substring(0, 10)+".." else this } + "   -  $currProgressInString%"
-                window.progress2text = "$totalProgressInString%  -  ${downloadedCount + 1}/${diff.newFiles.values.size}"
-                window.titleText = "($totalProgressInString%) 文件更新助手"
+            versionFile.makeParentDirs()
+            isVersionOutdate = if(versionFile.exists) {
+                val versionCached = versionFile.content
+                val versionRecieved = HashUtil.sha1(rawData)
+                versionCached != versionRecieved
+            } else {
+                true
             }
-
-            downloadedCount += 1
         }
+
+        var diff = AbstractMode.Difference()
+
+        if(isVersionOutdate)
+        {
+            // 对比文件差异
+            val regexes = indexResponse.paths.asList()
+            val targetDirectory = workDir.apply { mkdirs() }
+            val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
+
+            // 文件对比进度条
+            val fileCount = FileUtil.countFiles(targetDirectory)
+            var scannedCount = 0
+
+            // 开始文件对比过程
+            diff = CommonMode(regexes, targetDirectory, remoteFiles)() {
+                scannedCount += 1
+                window.progress1text = "正在检查资源..."
+                window.stateText = it.name
+                window.progress1value = ((scannedCount/fileCount.toFloat())*1000).toInt()
+            }
+            window.progress1value = 0
+
+            // 输出差异信息
+            LogSys.info("----------")
+            diff.oldFiles.forEach { LogSys.info("旧文件: $it") }
+            LogSys.info("----------")
+            diff.oldFolders.forEach { LogSys.info("旧目录: $it") }
+            LogSys.info("----------")
+            diff.newFiles.forEach { LogSys.info("新文件: ${it.key}") }
+            LogSys.info("----------")
+            diff.newFolders.forEach { LogSys.info("新目录: $it") }
+            LogSys.info("----------")
+            LogSys.info("旧文件: "+diff.oldFiles.size)
+            LogSys.info("旧目录: "+diff.oldFolders.size)
+            LogSys.info("新文件: "+diff.newFiles.size)
+            LogSys.info("新目录: "+diff.newFolders.size)
+
+            // 删除旧文件和旧目录，还有创建新目录
+            diff.oldFiles.map { (targetDirectory + it) }.forEach { it.delete() }
+            diff.oldFolders.map { (targetDirectory + it) }.forEach { it.delete() }
+            diff.newFolders.map { (targetDirectory + it) }.forEach { it.mkdirs() }
+
+            // 下载新文件
+            var totalBytes: Long = 0
+            var totalBytesDownloaded: Long = 0
+            var downloadedCount = 0
+            diff.newFiles.values.forEach { totalBytes += it }
+
+            // 开始下载
+            for ((relativePath, lengthExpected) in diff.newFiles)
+            {
+                val url = indexResponse.updateSource + relativePath
+                val file = targetDirectory + relativePath
+
+                httpDownload(client, url, file, lengthExpected) { packageLength, received, total ->
+                    totalBytesDownloaded += packageLength
+                    val currentProgress = received / total.toFloat()*100
+                    val totalProgress = totalBytesDownloaded / totalBytes.toFloat()*100
+
+                    val currProgressInString = String.format("%.1f", currentProgress)
+                    val totalProgressInString = String.format("%.1f", totalProgress)
+
+                    window.stateText = file.name
+                    window.progress1value = (currentProgress*10).toInt()
+                    window.progress2value = (totalProgress*10).toInt()
+                    window.progress1text = file.name.run { if(length>10) substring(0, 10)+".." else this } + "   -  $currProgressInString%"
+                    window.progress2text = "$totalProgressInString%  -  ${downloadedCount + 1}/${diff.newFiles.values.size}"
+                    window.titleText = "($totalProgressInString%) 文件更新助手"
+                }
+
+                downloadedCount += 1
+            }
+        }
+
+        if(versionCache.isNotEmpty())
+            versionFile.content = HashUtil.sha1(rawData)
 
         // 程序结束
         if(!autoExit)

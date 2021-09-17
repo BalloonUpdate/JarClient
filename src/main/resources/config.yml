@@ -3,8 +3,14 @@
 server: http://127.0.0.1:801/index.php
 
 # 更新完是否自动退出，还是手动退出
-auto_exit: false
+auto-exit: false
 
 # 是否检查.minecraft目录的存在
 # 设置为false可以跳过检查，直接启动
-minecraft_check: true
+minecraft-check: true
+
+# 版本缓存功能，设置为一个文件路径以开启此功能，注释或为空时关闭
+# 只能填写相对路径
+# 开启后会使用智能方案加速文件校验的过程
+# 如果需要强制检查更新，请删除这个文件
+version-cache: .minecraft/updater-version-cache.txt
