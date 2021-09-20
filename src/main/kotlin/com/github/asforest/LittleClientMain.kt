@@ -48,7 +48,7 @@ object LittleClientMain
                 if(DialogUtil.confirm("发生错误", content))
                     DialogUtil.error("调用堆栈", e.stackTraceToString())
             } else {
-                DialogUtil.error(e.getDisplayName(), e.javaClass.simpleName+"\n"+e.message)
+                DialogUtil.error(e.getDisplayName(), e.message ?: "")
             }
             exitProcess(1)
         }
