@@ -26,7 +26,7 @@ object HttpUtil
                 return r.body!!.string()
             }
         } catch (e: ConnectException) {
-            throw ConnectionClosedException("无法连接到服务器")
+            throw ConnectionClosedException("无法连接到更新服务器")
         } catch (e: SocketException) {
             throw ConnectionClosedException("连接中断")
         }
