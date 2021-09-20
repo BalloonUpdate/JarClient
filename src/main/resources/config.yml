@@ -13,4 +13,5 @@ minecraft-check: true
 # 只能填写相对路径
 # 开启后会使用智能方案加速文件校验的过程
 # 如果需要强制检查更新，请删除这个文件
-version-cache: .minecraft/updater-version-cache.txt
+# 此功能默认关闭
+#version-cache: .minecraft/updater-version-cache.txt
