@@ -49,10 +49,10 @@ object LittleClientMain
             if(e !is BaseException)
             {
                 val content = "${e.javaClass.name}\n${e.message}\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
-                if(DialogUtil.confirm("发生错误 v$versionText", content))
+                if(DialogUtil.confirm("发生错误 $versionText", content))
                     DialogUtil.error("调用堆栈", e.stackTraceToString())
             } else {
-                DialogUtil.error(e.getDisplayName() +" v$versionText", e.message ?: "")
+                DialogUtil.error(e.getDisplayName() +" $versionText", e.message ?: "")
             }
             exitProcess(1)
         }
