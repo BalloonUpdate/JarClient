@@ -5,11 +5,12 @@ import java.text.SimpleDateFormat
 val gitTagName: String? get() = Regex("(?<=refs/tags/).*").find(System.getenv("GITHUB_REF") ?: "")?.value
 val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
+val versionText: String get() = System.getenv("DBG_VERSION") ?: "0.0.0"
 
 val mainClassPath = "com.github.asforest.LittleClientMain"
 
 group = "com.github.asforest"
-version = gitTagName ?: "0.0.0"
+version = gitTagName ?: versionText
 
 plugins {
     kotlin("jvm") version "1.5.10"
@@ -49,7 +50,6 @@ tasks.jar {
     // 添加Manifest
     manifest {
         attributes("Main-Class" to mainClassPath)
-        attributes("Compile-Time" to timestamp)
         attributes("Application-Version" to archiveVersion.get())
         attributes("Author" to "Asforest")
         attributes("Git-Commit" to (gitCommitSha ?: ""))
