@@ -15,6 +15,7 @@ import okhttp3.*
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.scanner.ScannerException
 import java.io.File
+import java.io.FileNotFoundException
 import java.lang.Exception
 import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
@@ -30,9 +31,11 @@ object LittleClientMain
     @JvmStatic
     fun main(args: Array<String>)
     {
+        val versionText = readVersionFromManifest() ?: "0"
+
         try {
             LogSys.initialize()
-            run()
+            run(versionText)
         } catch (e: Exception) {
             try {
                 LogSys.error(e.javaClass.name)
@@ -46,31 +49,36 @@ object LittleClientMain
             if(e !is BaseException)
             {
                 val content = "${e.javaClass.name}\n${e.message}\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
-                if(DialogUtil.confirm("发生错误", content))
+                if(DialogUtil.confirm("发生错误 v$versionText", content))
                     DialogUtil.error("调用堆栈", e.stackTraceToString())
             } else {
-                DialogUtil.error(e.getDisplayName(), e.message ?: "")
+                DialogUtil.error(e.getDisplayName() +" v$versionText", e.message ?: "")
             }
             exitProcess(1)
         }
     }
 
-    fun run()
+    fun run(versionText: String)
     {
         val window = MainWin()
-        val workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
-        val versionText = readVersionFromManifest() ?: "0"
+        var workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
 
         // 配置文件
         val config = readConfigContent(workDir, "config.yml")
         val server = readFromConfig<String>(config, "server") ?: throw ConfigFileException("配置文件中的server选项无效")
         val autoExit = readFromConfig<Boolean>(config, "auto-exit") ?: false
-        val minecraftCheck = readFromConfig<Boolean>(config, "minecraft-check") ?: true
+        val workdirAdditional = readFromConfig<String>(config, "workdir") ?: ""
         val versionCache = readFromConfig<String>(config, "version-cache") ?: ""
 
         // .minecraft目录检测
-        if(EnvUtil.isPackaged && minecraftCheck && ".minecraft" !in workDir)
-            throw WrongWorkDirectoryException("请将软件放到.minecraft目录旁运行(与启动器同级)")
+        if(EnvUtil.isPackaged && workdirAdditional == "")
+        {
+            try {
+                workDir = searchDotMinecraft(workDir)
+            } catch (e: FileNotFoundException) {
+                throw WrongWorkDirectoryException("请将软件放到能够搜索到.minecraft目录的位置上")
+            }
+        }
 
         // 准备HTTP客户端
         val client = OkHttpClient.Builder()
@@ -313,6 +321,28 @@ object LittleClientMain
             return Yaml().load(content)
         } catch (e: ScannerException) {
             throw UnableToDecodeException("Yaml无法解码:\n"+e.message)
+        }
+    }
+
+    fun searchDotMinecraft(basedir: FileObj): FileObj 
+    {
+        try {
+            if(basedir.contains(".minecraft"))
+                return basedir
+            if(basedir.parent.contains(".minecraft"))
+                return basedir.parent
+            if(basedir.parent.parent.contains(".minecraft"))
+                return basedir.parent.parent
+            if(basedir.parent.parent.parent.contains(".minecraft"))
+                return basedir.parent.parent.parent
+            if(basedir.parent.parent.parent.parent.contains(".minecraft"))
+                return basedir.parent.parent.parent.parent
+            if(basedir.parent.parent.parent.parent.parent.contains(".minecraft"))
+                return basedir.parent.parent.parent.parent.parent
+            if(basedir.parent.parent.parent.parent.parent.parent.contains(".minecraft"))
+                return basedir.parent.parent.parent.parent.parent.parent
+        } finally {
+            throw FileNotFoundException("The .minecraft directory not found.")
         }
     }
 
