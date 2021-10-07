@@ -78,7 +78,10 @@ object LittleClientMain
             } catch (e: FileNotFoundException) {
                 throw WrongWorkDirectoryException("请将软件放到能够搜索到.minecraft目录的位置上")
             }
+        } else {
+            workDir += workdirAdditional
         }
+        workDir.mkdirs()
 
         // 准备HTTP客户端
         val client = OkHttpClient.Builder()
@@ -120,7 +123,7 @@ object LittleClientMain
         if(isVersionOutdate)
         {
             // 对比文件差异
-            val targetDirectory = workDir.apply { mkdirs() }
+            val targetDirectory = workDir
             val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
 
             // 文件对比进度条
@@ -341,9 +344,10 @@ object LittleClientMain
                 return basedir.parent.parent.parent.parent.parent
             if(basedir.parent.parent.parent.parent.parent.parent.contains(".minecraft"))
                 return basedir.parent.parent.parent.parent.parent.parent
-        } finally {
+        } catch (e: NullPointerException) {
             throw FileNotFoundException("The .minecraft directory not found.")
         }
+        throw FileNotFoundException("The .minecraft directory not found.")
     }
 
 }
