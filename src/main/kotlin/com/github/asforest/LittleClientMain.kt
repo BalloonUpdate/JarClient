@@ -10,6 +10,7 @@ import com.github.asforest.util.HttpUtil.httpFetch
 import com.github.asforest.window.MainWin
 import com.github.asforest.workmode.AbstractMode
 import com.github.asforest.workmode.CommonMode
+import com.github.asforest.workmode.OnceMode
 import okhttp3.*
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.scanner.ScannerException
@@ -89,8 +90,6 @@ object LittleClientMain
         window.stateText = "正在获取资源更新..."
         val rawData = httpFetch(client, indexResponse.updateUrl)
         val updateInfo = parseYaml<List<Any>>(rawData)
-        if(indexResponse.mode != "common")
-            throw NotSupportedWorkModeException("不支持的工作模式: ${indexResponse.mode}, 工作模式只支持common")
 
         // 使用版本缓存
         var isVersionOutdate = true
@@ -113,7 +112,6 @@ object LittleClientMain
         if(isVersionOutdate)
         {
             // 对比文件差异
-            val regexes = indexResponse.paths.asList()
             val targetDirectory = workDir.apply { mkdirs() }
             val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
 
@@ -122,13 +120,16 @@ object LittleClientMain
             var scannedCount = 0
 
             // 开始文件对比过程
-            diff = CommonMode(regexes, targetDirectory, remoteFiles)() {
+            LogSys.info("-----CommonMode-----")
+            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles)() {
                 scannedCount += 1
                 window.progress1text = "正在检查资源..."
                 window.stateText = it.name
                 window.progress1value = ((scannedCount/fileCount.toFloat())*1000).toInt()
             }
             window.progress1value = 0
+            LogSys.info("-----OnceMode-----")
+            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles)()
 
             // 输出差异信息
             LogSys.info("----------")
@@ -299,10 +300,8 @@ object LittleClientMain
         }
 
         return IndexResponse().apply {
-            serverVersion = resp["version"] as String
-            serverType = resp["server_type"] as String
-            mode = resp["mode"] as String
-            paths = (resp["paths"] as List<String>).toTypedArray()
+            common_mode = (resp["common_mode"] as List<String>).toTypedArray()
+            once_mode = (resp["once_mode"] as List<String>).toTypedArray()
             updateUrl = baseurl + if (update.indexOf("?") !== -1) update else "$update.yml"
             updateSource = baseurl + findSource(update, update) + "/"
         }

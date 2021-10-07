@@ -100,5 +100,13 @@ abstract class AbstractMode
         val oldFiles: MutableList<String> = mutableListOf(),
         val newFolders: MutableList<String> = mutableListOf(),
         val newFiles: MutableMap<String, Long> = mutableMapOf() // 文件名: 长度
-    )
+    ) {
+        operator fun plusAssign(other: Difference)
+        {
+            oldFolders += other.oldFolders
+            oldFiles += other.oldFiles
+            newFolders += other.newFolders
+            newFiles += other.newFiles
+        }
+    }
 }
