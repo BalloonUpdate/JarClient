@@ -11,6 +11,7 @@ import com.github.asforest.window.MainWin
 import com.github.asforest.workmode.AbstractMode
 import com.github.asforest.workmode.CommonMode
 import com.github.asforest.workmode.OnceMode
+import com.hrakaroo.glob.GlobPattern
 import okhttp3.*
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.scanner.ScannerException

@@ -26,7 +26,7 @@ dependencies {
 //    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.yaml:snakeyaml:1.29")
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
-
+    implementation("com.hrakaroo:glob:0.9.0")
     // implementation(fileTree("libs") {include("*.jar")})
 
     testImplementation(kotlin("test"))

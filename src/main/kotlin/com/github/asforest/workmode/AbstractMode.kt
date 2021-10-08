@@ -4,6 +4,7 @@ import com.github.asforest.util.FileObj
 import com.github.asforest.util.SimpleDirectory
 import com.github.asforest.util.SimpleFile
 import com.github.asforest.util.SimpleFileObject
+import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 
 typealias OnScanCallback = (file: FileObj) -> Unit
@@ -82,7 +83,12 @@ abstract class AbstractMode
         {
             val plain = !reg.startsWith("@")
             val regx = if(plain) reg else reg.substring(1)
-            result = result || if(plain) path.startsWith(regx) else Regex(regx).matches(path)
+            result = result || if(plain) {
+                val pattern = GlobPattern.compile(regx)
+                pattern.matches(path)
+            } else {
+                Regex(regx).matches(path)
+            }
         }
         return result
     }
