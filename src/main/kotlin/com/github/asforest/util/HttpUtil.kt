@@ -37,8 +37,9 @@ object HttpUtil
      */
     fun httpDownload(client: OkHttpClient, url: String, file: FileObj, lengthExpected: Long, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
     {
+        val url_ = url.replace("+", "%2B")
         file.makeParentDirs()
-        val req = Request.Builder().url(url).build()
+        val req = Request.Builder().url(url_).build()
 
         val bufferLen = { filelen: Long ->
             val kb = 1024
@@ -77,7 +78,7 @@ object HttpUtil
                         }
                     }
                 } else {
-                    throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url with httpcode(${r.code})")
+                    throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url_ with httpcode(${r.code})")
                 }
             }
         } catch (e: ConnectException) {
@@ -86,4 +87,22 @@ object HttpUtil
             throw ConnectionClosedException("连接中断(通常是网络原因)")
         }
     }
+
+//    fun encodeUri(uri: String): String {
+//        var newUri: String = ""
+//        val st = StringTokenizer(uri, "/ ", true)
+//        while (st.hasMoreTokens()) {
+//            val tok = st.nextToken()
+//            if (tok == "/") {
+//                newUri += "/"
+//            } else if (tok == " ") {
+//                newUri += "%20"
+//            } else {
+//                try {
+//                    newUri += URLEncoder.encode(tok, "UTF-8")
+//                } catch (ignored: UnsupportedEncodingException) { }
+//            }
+//        }
+//        return newUri
+//    }
 }
