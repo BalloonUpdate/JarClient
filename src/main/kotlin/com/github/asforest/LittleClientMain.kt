@@ -174,6 +174,9 @@ object LittleClientMain
             {
                 val url = indexResponse.updateSource + relativePath
                 val file = targetDirectory + relativePath
+                var time = System.currentTimeMillis()   // 获取下载开始（首个区段开始）时间戳
+                var downloadSpeedRaw = 0.0  // 初始化下载速度为 0
+                var bytesDownloaded = 0L    // 初始化时间区段内下载的大小为 0
 
                 httpDownload(client, url, file, lengthExpected) { packageLength, received, total ->
                     totalBytesDownloaded += packageLength
@@ -182,11 +185,21 @@ object LittleClientMain
 
                     val currProgressInString = String.format("%.1f", currentProgress)
                     val totalProgressInString = String.format("%.1f", totalProgress)
+                    
+                    val timer = System.currentTimeMillis()  // 获取当前（被回调时 / 区段结尾）时间戳
 
-                    window.stateText = file.name
+                    bytesDownloaded += packageLength    // 累加时间区段内的下载量
+                    if (timer - time > 1000) {  // 一秒更新一次，保证准确（区间太小易导致下载速度上下飘忽）
+                        downloadSpeedRaw = bytesDownloaded.toDouble()/(timer - time)
+                        time = timer    // 重新设定区段开始时间戳
+                        bytesDownloaded = 0 // 重置区间下载量
+                    }
+
+                    window.stateText = "正在下载: ${file.name}" // 可能是画蛇添足的修改，看情况是否合并吧
                     window.progress1value = (currentProgress*10).toInt()
                     window.progress2value = (totalProgress*10).toInt()
-                    window.progress1text = file.name.run { if(length>10) substring(0, 10)+".." else this } + "   -  $currProgressInString%"
+                    // 转换并添加 KB/MB 单位（应该没有人下载速度 <1KB/s || >1GB/s 吧），放在这里是因为 stateText 已经显示文件名了
+                    window.progress1text = downloadSpeedRaw.run { if (this > 1024) "${(this/1024).toInt()}MB/s" else "${this.toInt()}KB/s"} + "   -  $currProgressInString%"
                     window.progress2text = "$totalProgressInString%  -  ${downloadedCount + 1}/${diff.newFiles.values.size}"
                     window.titleText = "($totalProgressInString%) 文件更新助手"
                 }
