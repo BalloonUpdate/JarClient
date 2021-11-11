@@ -303,7 +303,7 @@ object LittleClientMain
     {
         val baseurl = indexUrl.substring(0, indexUrl.lastIndexOf('/') + 1)
         val resp = parseYaml<Map<String, Any>>(httpFetch(client, indexUrl))
-        val update = resp["update"] as String ?: "res"
+        val update = resp["update"] as? String ?: "res"
 
         fun findSource(text: String, def: String): String
         {
