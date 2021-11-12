@@ -4,4 +4,9 @@
 
 精简版兼容正式版的服务端以及通信协议，可以直接使用正式版的更新地址
 
-> 目前精简版处于快速开发阶段(dev分支)，许多代码API可能随时变更
+使用教程请参考以下链接：
+
+1.帮助文档（中国大陆）： [https://updater-for-minecraft.gitee.io/docs-mirror](https://updater-for-minecraft.gitee.io/docs-mirror)
+
+2.帮助文档（全球）：[https://updater-for-minecraft.github.io/Docs](https://updater-for-minecraft.github.io/Docs)
+
