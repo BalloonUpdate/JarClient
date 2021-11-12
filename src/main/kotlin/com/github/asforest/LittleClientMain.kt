@@ -11,7 +11,6 @@ import com.github.asforest.window.MainWin
 import com.github.asforest.workmode.AbstractMode
 import com.github.asforest.workmode.CommonMode
 import com.github.asforest.workmode.OnceMode
-import com.hrakaroo.glob.GlobPattern
 import okhttp3.*
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.scanner.ScannerException
@@ -174,7 +173,9 @@ object LittleClientMain
             {
                 val url = indexResponse.updateSource + relativePath
                 val file = targetDirectory + relativePath
-                var time = System.currentTimeMillis()   // 获取下载开始（首个区段开始）时间戳
+                val rateUpdatePeriod = 1000 // 一秒更新一次下载速度，保证准确（区间太小易导致下载速度上下飘忽）
+                // 获取下载开始（首个区段开始）时间戳，并且第一次速度采样从100ms就开始，而非1s，避免多个小文件下载时速度一直显示为0
+                var timeStart = System.currentTimeMillis() - (rateUpdatePeriod - 100)
                 var downloadSpeedRaw = 0.0  // 初始化下载速度为 0
                 var bytesDownloaded = 0L    // 初始化时间区段内下载的大小为 0
 
@@ -186,12 +187,12 @@ object LittleClientMain
                     val currProgressInString = String.format("%.1f", currentProgress)
                     val totalProgressInString = String.format("%.1f", totalProgress)
                     
-                    val timer = System.currentTimeMillis()  // 获取当前（被回调时 / 区段结尾）时间戳
+                    val timeEnd = System.currentTimeMillis()  // 获取当前（被回调时 / 区段结尾）时间戳
 
                     bytesDownloaded += packageLength    // 累加时间区段内的下载量
-                    if (timer - time > 1000) {  // 一秒更新一次，保证准确（区间太小易导致下载速度上下飘忽）
-                        downloadSpeedRaw = bytesDownloaded.toDouble()/(timer - time)
-                        time = timer    // 重新设定区段开始时间戳
+                    if (timeEnd - timeStart > rateUpdatePeriod) {
+                        downloadSpeedRaw = bytesDownloaded.toDouble()/(timeEnd - timeStart)
+                        timeStart = timeEnd    // 重新设定区段开始时间戳
                         bytesDownloaded = 0 // 重置区间下载量
                     }
 
