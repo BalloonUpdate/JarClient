@@ -64,22 +64,21 @@ object LittleClientMain
         var workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
 
         // 配置文件
-        val config = readConfigContent(workDir, "config.yml")
+        val config = readConfigContent(if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir, "config.yml")
         val server = readFromConfig<String>(config, "server") ?: throw ConfigFileException("配置文件中的server选项无效")
         val autoExit = readFromConfig<Boolean>(config, "auto-exit") ?: false
-        val workdirAdditional = readFromConfig<String>(config, "workdir") ?: ""
+        val workdirExplicitly = readFromConfig<String>(config, "base-path") ?: ""
         val versionCache = readFromConfig<String>(config, "version-cache") ?: ""
 
         // .minecraft目录检测
-        if(EnvUtil.isPackaged && workdirAdditional == "")
-        {
+        workDir = if(EnvUtil.isPackaged && workdirExplicitly == "") {
             try {
-                workDir = searchDotMinecraft(workDir)
+                searchDotMinecraft(workDir)
             } catch (e: FileNotFoundException) {
                 throw WrongWorkDirectoryException("请将软件放到能够搜索到.minecraft目录的位置上")
             }
         } else {
-            workDir += workdirAdditional
+            EnvUtil.jarFile.parent + workdirExplicitly
         }
         workDir.mkdirs()
 
