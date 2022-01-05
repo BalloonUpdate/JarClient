@@ -13,14 +13,20 @@ object HttpUtil
     /**
      * 从HTTP服务器上获取文件内容（主要是小文件）
      */
-    fun httpFetch(client: OkHttpClient, url: String): String
+    fun httpFetch(client: OkHttpClient, url: String, noCache: String?): String
     {
-        val req = Request.Builder().url(url).build()
+        var url_ = url
+
+        // 避免CDN缓存
+        if(noCache != null)
+            url_ = appendQueryParam(url_, noCache, System.currentTimeMillis().toString())
+
+        val req = Request.Builder().url(url_).build()
 
         try {
             client.newCall(req).execute().use { r ->
                 if(!r.isSuccessful)
-                    throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url with httpcode(${r.code})\n"+ r.body?.charStream().use {
+                    throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url_ with httpcode(${r.code})\n"+ r.body?.charStream().use {
                         it?.readText()?.run { if(length> 300) substring(0, 300)+"\n..." else this } ?: "_None_"
                     })
                 return r.body!!.string()
@@ -35,9 +41,14 @@ object HttpUtil
     /**
      * 从HTTP服务器上下载文件（主要是大文件，二进制文件）
      */
-    fun httpDownload(client: OkHttpClient, url: String, file: FileObj, lengthExpected: Long, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
+    fun httpDownload(client: OkHttpClient, url: String, file: FileObj, lengthExpected: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
     {
-        val url_ = url.replace("+", "%2B")
+        var url_ = url.replace("+", "%2B")
+
+        // 避免CDN缓存
+        if(noCache != null)
+            url_ = appendQueryParam(url_, noCache, System.currentTimeMillis().toString())
+
         file.makeParentDirs()
         val req = Request.Builder().url(url_).build()
 
@@ -86,6 +97,18 @@ object HttpUtil
         } catch (e: SocketException) {
             throw ConnectionClosedException("连接中断(通常是网络原因)")
         }
+    }
+
+    fun appendQueryParam(url: String, key: String, value: String): String
+    {
+        var result = url
+
+        if(result.indexOf("?") == -1)
+            result += "?"
+
+        result += (if(result.endsWith("?")) "" else "&") + key + '=' + value
+
+        return result
     }
 
 //    fun encodeUri(uri: String): String {
