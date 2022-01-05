@@ -69,6 +69,7 @@ object LittleClientMain
         val autoExit = readFromConfig<Boolean>(config, "auto-exit") ?: false
         val workdirExplicitly = readFromConfig<String>(config, "base-path") ?: ""
         val versionCache = readFromConfig<String>(config, "version-cache") ?: ""
+        val noCache: String? = readFromConfig<String>(config, "no-cache")
 
         // .minecraft目录检测
         workDir = if(EnvUtil.isPackaged && workdirExplicitly == "") {
@@ -94,11 +95,11 @@ object LittleClientMain
         window.stateText = "正在连接到更新服务器..."
 
         // 连接服务器获取主要更新信息
-        val indexResponse = fetchIndexResponse(client, server)
+        val indexResponse = fetchIndexResponse(client, server, noCache)
 
         // 等待服务器返回最新文件结构数据
         window.stateText = "正在获取资源更新..."
-        val rawData = httpFetch(client, indexResponse.updateUrl)
+        val rawData = httpFetch(client, indexResponse.updateUrl, noCache)
         val updateInfo = parseYaml<List<Any>>(rawData)
 
         // 使用版本缓存
@@ -178,7 +179,7 @@ object LittleClientMain
                 var downloadSpeedRaw = 0.0  // 初始化下载速度为 0
                 var bytesDownloaded = 0L    // 初始化时间区段内下载的大小为 0
 
-                httpDownload(client, url, file, lengthExpected) { packageLength, received, total ->
+                httpDownload(client, url, file, lengthExpected, noCache) { packageLength, received, total ->
                     totalBytesDownloaded += packageLength
                     val currentProgress = received / total.toFloat()*100
                     val totalProgress = totalBytesDownloaded / totalBytes.toFloat()*100
@@ -299,10 +300,10 @@ object LittleClientMain
     /**
      * 从服务器获取文件更新信息
      */
-    fun fetchIndexResponse(client: OkHttpClient, indexUrl: String): IndexResponse
+    fun fetchIndexResponse(client: OkHttpClient, indexUrl: String, noCache: String?): IndexResponse
     {
         val baseurl = indexUrl.substring(0, indexUrl.lastIndexOf('/') + 1)
-        val resp = parseYaml<Map<String, Any>>(httpFetch(client, indexUrl))
+        val resp = parseYaml<Map<String, Any>>(httpFetch(client, indexUrl, noCache))
         val update = resp["update"] as? String ?: "res"
 
         fun findSource(text: String, def: String): String
