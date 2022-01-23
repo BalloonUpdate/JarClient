@@ -12,6 +12,8 @@ import com.github.asforest.workmode.AbstractMode
 import com.github.asforest.workmode.CommonMode
 import com.github.asforest.workmode.OnceMode
 import okhttp3.*
+import org.json.JSONArray
+import org.json.JSONObject
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.scanner.ScannerException
 import java.io.File
@@ -100,7 +102,7 @@ object LittleClientMain
         // 等待服务器返回最新文件结构数据
         window.stateText = "正在获取资源更新..."
         val rawData = httpFetch(client, indexResponse.updateUrl, noCache)
-        val updateInfo = parseYaml<List<Any>>(rawData)
+        val updateInfo = parseAsJsonArray(rawData)
 
         // 使用版本缓存
         var isVersionOutdate = true
@@ -124,7 +126,8 @@ object LittleClientMain
         {
             // 对比文件差异
             val targetDirectory = workDir
-            val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
+//            val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
+            val remoteFiles = unserializeFileStructure(updateInfo as JSONArray)
 
             // 文件对比进度条
             val fileCount = FileUtil.countFiles(targetDirectory)
@@ -278,15 +281,16 @@ object LittleClientMain
     /**
      * 将服务器返回的文件结构信息反序列化成SimpleFileObject对象便于使用
      */
-    fun unserializeFileStructure(raw: List<Map<String, Any>>): Array<SimpleFileObject>
+    fun unserializeFileStructure(raw: JSONArray): Array<SimpleFileObject>
     {
         val res = ArrayList<SimpleFileObject>()
-        for (f in raw)
+        for (ff in raw)
         {
+            val f = ff as JSONObject
             val name = f["name"] as String
-            if("children" in f)
+            if(f.has("children"))
             {
-                val files = f["children"] as List<Map<String, Any>>
+                val files = f["children"] as JSONArray
                 res += SimpleDirectory(name, unserializeFileStructure(files))
             } else {
                 val length = f["length"] as Int
@@ -303,7 +307,7 @@ object LittleClientMain
     fun fetchIndexResponse(client: OkHttpClient, indexUrl: String, noCache: String?): IndexResponse
     {
         val baseurl = indexUrl.substring(0, indexUrl.lastIndexOf('/') + 1)
-        val resp = parseYaml<Map<String, Any>>(httpFetch(client, indexUrl, noCache))
+        val resp = parseAsJsonObject(httpFetch(client, indexUrl, noCache))
         val update = resp["update"] as? String ?: "res"
 
         fun findSource(text: String, def: String): String
@@ -326,19 +330,28 @@ object LittleClientMain
         }
 
         return IndexResponse().apply {
-            common_mode = (resp["common_mode"] as List<String>).toTypedArray()
-            once_mode = (resp["once_mode"] as List<String>).toTypedArray()
+            common_mode = (resp["common_mode"] as JSONArray).map { it as String }.toTypedArray()
+            once_mode = (resp["once_mode"]  as JSONArray).map { it as String }.toTypedArray()
             updateUrl = baseurl + if (update.indexOf("?") !== -1) update else "$update.yml"
             updateSource = baseurl + findSource(update, update) + "/"
         }
     }
 
-    fun <Type> parseYaml(content: String): Type
+    fun parseAsJsonObject(content: String): JSONObject
     {
         try {
-            return Yaml().load(content)
+            return JSONObject(content)
         } catch (e: ScannerException) {
-            throw UnableToDecodeException("Yaml无法解码:\n"+e.message)
+            throw UnableToDecodeException("Json无法解码:\n"+e.message)
+        }
+    }
+
+    fun parseAsJsonArray(content: String): JSONArray
+    {
+        try {
+            return JSONArray(content)
+        } catch (e: ScannerException) {
+            throw UnableToDecodeException("Json无法解码:\n"+e.message)
         }
     }
 

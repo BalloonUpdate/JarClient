@@ -2,15 +2,16 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Date
 import java.text.SimpleDateFormat
 
+fun getVersionName(tagName: String) = if(tagName.startsWith("v")) tagName.substring(1) else tagName
 val gitTagName: String? get() = Regex("(?<=refs/tags/).*").find(System.getenv("GITHUB_REF") ?: "")?.value
 val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
-val versionText: String get() = System.getenv("DBG_VERSION") ?: "0.0.0"
+val debugVersion: String get() = System.getenv("DBG_VERSION") ?: "0.0.0"
 
 val mainClassPath = "com.github.asforest.LittleClientMain"
 
 group = "com.github.asforest"
-version = gitTagName ?: versionText
+version = gitTagName?.run { getVersionName(this) } ?: debugVersion
 
 plugins {
     kotlin("jvm") version "1.5.10"
@@ -24,8 +25,9 @@ repositories {
 
 dependencies {
 //    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
-    implementation("org.yaml:snakeyaml:1.29")
+    implementation("org.yaml:snakeyaml:1.30")
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("org.json:json:20211205")
     implementation("com.hrakaroo:glob:0.9.0")
     // implementation(fileTree("libs") {include("*.jar")})
 
