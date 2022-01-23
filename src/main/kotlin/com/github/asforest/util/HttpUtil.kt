@@ -41,7 +41,7 @@ object HttpUtil
     /**
      * 从HTTP服务器上下载文件（主要是大文件，二进制文件）
      */
-    fun httpDownload(client: OkHttpClient, url: String, file: FileObj, lengthExpected: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
+    fun httpDownload(client: OkHttpClient, url: String, file: FileObj, lengthExpected: Long, modifed: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
     {
         var url_ = url.replace("+", "%2B")
 
@@ -92,6 +92,8 @@ object HttpUtil
                     throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url_ with httpcode(${r.code})")
                 }
             }
+
+            file._file.setLastModified(modifed)
         } catch (e: ConnectException) {
             throw ConnectionClosedException("无法连接到服务器(通常是网络原因或者配置不正确)")
         } catch (e: SocketException) {

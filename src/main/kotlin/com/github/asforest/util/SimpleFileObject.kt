@@ -29,10 +29,12 @@ class SimpleFile: SimpleFileObject
 {
     var length: Long
     var hash: String
+    var modified: Long
 
-    constructor(name: String, length: Long, hash: String) : super(name)
+    constructor(name: String, length: Long, hash: String, modified: Long) : super(name)
     {
         this.length = length
         this.hash = hash
+        this.modified = modified
     }
 }
