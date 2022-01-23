@@ -1,5 +1,6 @@
 # 更新服务器的地址，和正式版的api选项互相兼容
-server: http://127.0.0.1:8850/index.yml
+# 注意这是4.0版本的配置文件，结尾普遍从3.0版本的.yml变成了.json，请注意区分！
+server: http://127.0.0.1:8850/index.json
 
 # 更新完是否自动退出，还是手动退出（点击确定对话框），默认值false
 # auto-exit: false
