@@ -16,18 +16,20 @@ abstract class AbstractMode
     val local: FileObj
     val remote: Array<SimpleFileObject>
     val result: Difference = Difference()
+    var modifiedTimePrioritized: Boolean
 
     /**
      * @param regexes 要比较的路径
      * @param local 要比较的本地文件
      * @param remote 要比较的远程文件
      */
-    constructor(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>)
+    constructor(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, modifiedTimePrioritized: Boolean)
     {
         this.regexes = regexes
         this.base = local
         this.local = local
         this.remote = remote
+        this.modifiedTimePrioritized = modifiedTimePrioritized
     }
 
     /**
@@ -62,7 +64,7 @@ abstract class AbstractMode
                 markAsNew(n, dir + n.name)
         } else if (node is SimpleFile){
             val rp = dir.relativizedBy(base)
-            result.newFiles[rp] = node.length
+            result.newFiles[rp] = Pair(node.length, node.modified)
         }
     }
 
@@ -105,7 +107,7 @@ abstract class AbstractMode
         val oldFolders: MutableList<String> = mutableListOf(),
         val oldFiles: MutableList<String> = mutableListOf(),
         val newFolders: MutableList<String> = mutableListOf(),
-        val newFiles: MutableMap<String, Long> = mutableMapOf() // 文件名: 长度
+        val newFiles: MutableMap<String, Pair<Long, Long>> = mutableMapOf() // 文件名: <长度, 修改时间>
     ) {
         operator fun plusAssign(other: Difference)
         {

@@ -12,7 +12,8 @@ import com.github.asforest.util.SimpleFileObject
  * 不匹配的文件会被忽略掉(不做任何变动)
  * 匹配的文件会与服务器进行同步
  */
-class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>) : AbstractMode(regexes, local, remote)
+class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, modifiedTimePrioritized: Boolean)
+    : AbstractMode(regexes, local, remote, modifiedTimePrioritized)
 {
     override fun compare(onScan: ((file: FileObj) -> Unit)?)
     {
@@ -63,13 +64,28 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
                 } else if(r is SimpleFile) { // 远程文件是一个文件
                     if(l.isFile) // 本地文件和远程文件都是文件，则对比校验
                     {
-                        val lsha1 = l.sha1
-                        if(lsha1 != r.hash)
+                        var noModifiedWithinMTime = false
+
+                        if(this.modifiedTimePrioritized)
+                            noModifiedWithinMTime = r.modified == l.modified
+
+                        if(!noModifiedWithinMTime)
                         {
-                            LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
-                            markAsOld(l)
-                            markAsNew(r, l)
+                            val lsha1 = l.sha1
+                            if(lsha1 != r.hash)
+                            {
+                                LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
+                                markAsOld(l)
+                                markAsNew(r, l)
+                            } else if (modifiedTimePrioritized && r.modified != -1L) {
+                                LogSys.info("更新文件mtime: " + l.relativizedBy(base) + " => " + r.modified)
+
+                                // 更新修改时间
+                                l._file.setLastModified(r.modified)
+                            }
                         }
+
+
                     } else { // 本地文件是一个目录
                         markAsOld(l)
                         markAsNew(r, l)

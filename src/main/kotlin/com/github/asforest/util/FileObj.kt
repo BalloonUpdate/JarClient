@@ -73,8 +73,17 @@ class FileObj
             if(!exists)
                 throw FileNotFoundException(path)
             if(isDirectory)
-                throw FileNotFoundException("is not a file: "+path)
+                throw FileNotFoundException("is not a file: $path")
             return file.length()
+        }
+
+    val modified: Long
+        get() {
+            if(!exists)
+                throw FileNotFoundException(path)
+            if(isDirectory)
+                throw FileNotFoundException("is not a file: $path")
+            return file.lastModified()
         }
 
     val files: List<FileObj> get() = file.listFiles().map { FileObj(it) }

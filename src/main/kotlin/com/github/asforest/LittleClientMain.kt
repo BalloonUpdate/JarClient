@@ -72,6 +72,7 @@ object LittleClientMain
         val workdirExplicitly = readFromConfig<String>(config, "base-path") ?: ""
         val versionCache = readFromConfig<String>(config, "version-cache") ?: ""
         val noCache: String? = readFromConfig<String>(config, "no-cache")
+        val modifiedTimePrioritized = readFromConfig<Boolean>(config, "modification-time-prioritized") ?: false
 
         // .minecraft目录检测
         workDir = if(EnvUtil.isPackaged && workdirExplicitly == "") {
@@ -135,7 +136,7 @@ object LittleClientMain
 
             // 开始文件对比过程
             LogSys.info("-----CommonMode-----")
-            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles)() {
+            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, modifiedTimePrioritized)() {
                 scannedCount += 1
                 window.progress1text = "正在检查资源..."
                 window.stateText = it.name
@@ -143,7 +144,7 @@ object LittleClientMain
             }
             window.progress1value = 0
             LogSys.info("-----OnceMode-----")
-            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles)()
+            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, modifiedTimePrioritized)()
 
             // 输出差异信息
             LogSys.info("----------")
@@ -169,10 +170,10 @@ object LittleClientMain
             var totalBytes: Long = 0
             var totalBytesDownloaded: Long = 0
             var downloadedCount = 0
-            diff.newFiles.values.forEach { totalBytes += it }
+            diff.newFiles.values.forEach { totalBytes += it.first }
 
             // 开始下载
-            for ((relativePath, lengthExpected) in diff.newFiles)
+            for ((relativePath, lm) in diff.newFiles)
             {
                 val url = indexResponse.updateSource + relativePath
                 val file = targetDirectory + relativePath
@@ -182,7 +183,10 @@ object LittleClientMain
                 var downloadSpeedRaw = 0.0  // 初始化下载速度为 0
                 var bytesDownloaded = 0L    // 初始化时间区段内下载的大小为 0
 
-                httpDownload(client, url, file, lengthExpected, noCache) { packageLength, received, total ->
+                val lengthExpected = lm.first
+                val midifed = lm.second
+
+                httpDownload(client, url, file, lengthExpected, midifed, noCache) { packageLength, received, total ->
                     totalBytesDownloaded += packageLength
                     val currentProgress = received / total.toFloat()*100
                     val totalProgress = totalBytesDownloaded / totalBytes.toFloat()*100
@@ -295,7 +299,8 @@ object LittleClientMain
             } else {
                 val length = f["length"] as Int
                 val hash = f["hash"] as String
-                res += SimpleFile(name, length.toLong(), hash)
+                val modified =( f["modified"] ?: -1 ) as Int
+                res += SimpleFile(name, length.toLong(), hash, modified.toLong())
             }
         }
         return res.toTypedArray()
