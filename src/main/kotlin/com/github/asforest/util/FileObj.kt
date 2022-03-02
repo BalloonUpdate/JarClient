@@ -1,4 +1,3 @@
-//@file:JvmName("FileObj")
 package com.github.asforest.util
 
 import java.io.File

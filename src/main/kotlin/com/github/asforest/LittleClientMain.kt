@@ -3,7 +3,8 @@ package com.github.asforest
 
 import com.github.asforest.exception.*
 import com.github.asforest.logging.LogSys
-import com.github.asforest.model.IndexResponse
+import com.github.asforest.data.IndexResponse
+import com.github.asforest.data.Options
 import com.github.asforest.util.*
 import com.github.asforest.util.HttpUtil.httpDownload
 import com.github.asforest.util.HttpUtil.httpFetch
@@ -25,91 +26,76 @@ import java.util.jar.Manifest
 import javax.swing.JOptionPane
 import kotlin.system.exitProcess
 
-object LittleClientMain
+class LittleClientMain
 {
     /**
-     * 入口程序
+     * 应用程序版本号
      */
-    @JvmStatic
-    fun main(args: Array<String>)
+    val appVersion by lazy { readVersionFromManifest() ?: "0.0.0" }
+
+    /**
+     * 主窗口对象
+     */
+    val window = MainWin()
+
+    /**
+     * 工作目录
+     */
+    val workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
+
+    /**
+     * 配置文件对象
+     */
+    val options = Options.CreateFromMap(readConfig((if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir) + "config.yml"))
+
+    /**
+     * 更新目录（更新目录指从哪个目录起始，更新所有子目录）
+     */
+    val updateDir = if(EnvUtil.isPackaged)
     {
-        val versionText = readVersionFromManifest() ?: "0"
+        // .minecraft目录检测，如果在配置文件指定了base-path，则禁用搜索，改为使用用户指定的路径
+        if (options.basePath != "") EnvUtil.jarFile.parent + options.basePath
+        else searchDotMinecraft(workDir) ?: throw UpdateDirNotFoundException()
+    } else {
+        workDir // 调试状态下永远使用project/workdir作为更新目录
+    }.apply { mkdirs() }
 
-        try {
-            LogSys.initialize()
-            run(versionText)
-        } catch (e: Exception) {
-            try {
-                LogSys.error(e.javaClass.name)
-                LogSys.error(e.stackTraceToString())
-            } catch (e: Exception) {
-                System.err.println("------------------------")
-                System.err.println(e.javaClass.name)
-                System.err.println(e.stackTraceToString())
-            }
+        /**
+     * OkHttp客户端对象
+     */
+    val client = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(5, TimeUnit.SECONDS).build()
 
-            if(e !is BaseException)
-            {
-                val content = "${e.javaClass.name}\n${e.message}\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
-                if(DialogUtil.confirm("发生错误 $versionText", content))
-                    DialogUtil.error("调用堆栈", e.stackTraceToString())
-            } else {
-                DialogUtil.error(e.getDisplayName() +" $versionText", e.message ?: "")
-            }
-            exitProcess(1)
-        }
-    }
-
-    fun run(versionText: String)
+    fun run()
     {
-        val window = MainWin()
-        var workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
-
-        // 配置文件
-        val config = readConfigContent(if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir, "config.yml")
-        val server = readFromConfig<String>(config, "server") ?: throw ConfigFileException("配置文件中的server选项无效")
-        val autoExit = readFromConfig<Boolean>(config, "auto-exit") ?: false
-        val workdirExplicitly = readFromConfig<String>(config, "base-path") ?: ""
-        val versionCache = readFromConfig<String>(config, "version-cache") ?: ""
-        val noCache: String? = readFromConfig<String>(config, "no-cache")
-        val modifiedTimePrioritized = readFromConfig<Boolean>(config, "modification-time-prioritized") ?: false
-
-        // .minecraft目录检测
-        workDir = if(EnvUtil.isPackaged && workdirExplicitly == "") {
-            try {
-                searchDotMinecraft(workDir)
-            } catch (e: FileNotFoundException) {
-                throw WrongWorkDirectoryException("请将软件放到能够搜索到.minecraft目录的位置上")
-            }
-        } else {
-            EnvUtil.jarFile.parent + workdirExplicitly
-        }
-        workDir.mkdirs()
-
-        // 准备HTTP客户端
-        val client = OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(5, TimeUnit.SECONDS).build()
+        // 输出调试信息
+        LogSys.openRangedTag("环境")
+        LogSys.debug("更新目录: ${updateDir.path}")
+        LogSys.debug("工作目录: ${workDir.path}")
+        LogSys.debug("程序目录: ${if(EnvUtil.isPackaged) EnvUtil.jarFile.parent.path else "dev-mode"}")
+        LogSys.debug("应用版本: $appVersion (${ManifestUtil.gitCommit})")
+        LogSys.closeRangedTag()
 
         // 初始化窗口
-        window.titleTextSuffix = " v$versionText"
+        window.titleTextSuffix = " $appVersion"
         window.titleText = "文件更新助手"
         window.stateText = "正在连接到更新服务器..."
 
         // 连接服务器获取主要更新信息
-        val indexResponse = fetchIndexResponse(client, server, noCache)
+        val indexResponse = fetchIndexResponse(client, options.server, options.noCache)
 
         // 等待服务器返回最新文件结构数据
         window.stateText = "正在获取资源更新..."
-        val rawData = httpFetch(client, indexResponse.updateUrl, noCache)
+        val rawData = httpFetch(client, indexResponse.updateUrl, options.noCache)
         val updateInfo = parseAsJsonArray(rawData)
 
         // 使用版本缓存
         var isVersionOutdate = true
-        val versionFile = workDir + versionCache
+        val versionFile = updateDir + options.versionCache
 
-        if(versionCache.isNotEmpty())
+        if(options.versionCache.isNotEmpty())
         {
             versionFile.makeParentDirs()
             isVersionOutdate = if(versionFile.exists) {
@@ -121,45 +107,42 @@ object LittleClientMain
             }
         }
 
+        // 计算文件差异
         var diff = AbstractMode.Difference()
 
         if(isVersionOutdate)
         {
             // 对比文件差异
-            val targetDirectory = workDir
-//            val remoteFiles = unserializeFileStructure(updateInfo as List<Map<String, Any>>)
+            val targetDirectory = updateDir
             val remoteFiles = unserializeFileStructure(updateInfo as JSONArray)
 
-            // 文件对比进度条
+            // 文件对比进度
             val fileCount = FileUtil.countFiles(targetDirectory)
             var scannedCount = 0
 
             // 开始文件对比过程
-            LogSys.info("-----CommonMode-----")
-            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, modifiedTimePrioritized)() {
+            LogSys.openRangedTag("普通对比")
+            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, options.modificationTimeCheck)() {
                 scannedCount += 1
                 window.progress1text = "正在检查资源..."
                 window.stateText = it.name
                 window.progress1value = ((scannedCount/fileCount.toFloat())*1000).toInt()
             }
             window.progress1value = 0
-            LogSys.info("-----OnceMode-----")
-            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, modifiedTimePrioritized)()
+            LogSys.closeRangedTag()
+
+            LogSys.openRangedTag("补全对比")
+            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, options.modificationTimeCheck)()
+            LogSys.closeRangedTag()
 
             // 输出差异信息
-            LogSys.info("----------")
+            LogSys.openRangedTag("文件差异")
+            LogSys.info("旧文件: ${diff.oldFiles.size}, 旧目录: ${diff.oldFolders.size}, 新文件: ${diff.newFiles.size}, 新目录: ${diff.newFolders.size}")
             diff.oldFiles.forEach { LogSys.info("旧文件: $it") }
-            LogSys.info("----------")
             diff.oldFolders.forEach { LogSys.info("旧目录: $it") }
-            LogSys.info("----------")
             diff.newFiles.forEach { LogSys.info("新文件: ${it.key}") }
-            LogSys.info("----------")
             diff.newFolders.forEach { LogSys.info("新目录: $it") }
-            LogSys.info("----------")
-            LogSys.info("旧文件: "+diff.oldFiles.size)
-            LogSys.info("旧目录: "+diff.oldFolders.size)
-            LogSys.info("新文件: "+diff.newFiles.size)
-            LogSys.info("新目录: "+diff.newFolders.size)
+            LogSys.closeRangedTag()
 
             // 删除旧文件和旧目录，还有创建新目录
             diff.oldFiles.map { (targetDirectory + it) }.forEach { it.delete() }
@@ -178,7 +161,8 @@ object LittleClientMain
                 val url = indexResponse.updateSource + relativePath
                 val file = targetDirectory + relativePath
                 val rateUpdatePeriod = 1000 // 一秒更新一次下载速度，保证准确（区间太小易导致下载速度上下飘忽）
-                // 获取下载开始（首个区段开始）时间戳，并且第一次速度采样从100ms就开始，而非1s，避免多个小文件下载时速度一直显示为0
+
+                // 获取下载开始（首个区段开始）时间戳，并且第一次速度采样从第100ms就开始，而非1s，避免多个小文件下载时速度一直显示为0
                 var timeStart = System.currentTimeMillis() - (rateUpdatePeriod - 100)
                 var downloadSpeedRaw = 0.0  // 初始化下载速度为 0
                 var bytesDownloaded = 0L    // 初始化时间区段内下载的大小为 0
@@ -186,7 +170,7 @@ object LittleClientMain
                 val lengthExpected = lm.first
                 val midifed = lm.second
 
-                httpDownload(client, url, file, lengthExpected, midifed, noCache) { packageLength, received, total ->
+                httpDownload(client, url, file, lengthExpected, midifed, options.noCache) { packageLength, received, total ->
                     totalBytesDownloaded += packageLength
                     val currentProgress = received / total.toFloat()*100
                     val totalProgress = totalBytesDownloaded / totalBytes.toFloat()*100
@@ -216,11 +200,11 @@ object LittleClientMain
             }
         }
 
-        if(versionCache.isNotEmpty())
+        if(options.versionCache.isNotEmpty())
             versionFile.content = HashUtil.sha1(rawData)
 
         // 程序结束
-        if(!autoExit)
+        if(!options.autoExit)
         {
             val news = diff.newFiles
             val hasUpdate = news.isEmpty()
@@ -232,17 +216,15 @@ object LittleClientMain
     }
 
     /**
-     * 从外部/内部读取配置文件并将内容返回
-     * @param workdir 工作目录
-     * @param filename 配置文件文件名
+     * 从外部/内部读取配置文件并将内容返回（当外部不可用时会从内部读取）
+     * @param externalConfigFile 外部配置文件
      * @return 解码后的配置文件对象
      */
-    fun readConfigContent(workdir: FileObj, filename: String): Map<String, Any>
+    fun readConfig(externalConfigFile: FileObj): Map<String, Any>
     {
-        val externalFile = workdir + filename
         try {
             val content: String
-            if(!externalFile.exists)
+            if(!externalConfigFile.exists)
             {
                 if(!EnvUtil.isPackaged)
                     throw ConfigFileNotFoundException("找不到配置文件config.yml")
@@ -251,7 +233,7 @@ object LittleClientMain
                     jar.getInputStream(configFileInZip).use { content = it.readBytes().decodeToString() }
                 }
             } else {
-                content = externalFile.content
+                content = externalConfigFile.content
             }
             return Yaml().load(content)
         } catch (e: ScannerException) {
@@ -272,14 +254,6 @@ object LittleClientMain
                 return Manifest(it).mainAttributes.getValue("Application-Version")
             }
         }
-    }
-
-    /**
-     * 从配置文件里读取东西，并校验
-     */
-    inline fun <reified Type> readFromConfig(config: Map<String, Any>, key: String): Type?
-    {
-        return if(key in config && config[key] != null && config[key] is Type) config[key] as Type else null
     }
 
     /**
@@ -360,7 +334,13 @@ object LittleClientMain
         }
     }
 
-    fun searchDotMinecraft(basedir: FileObj): FileObj 
+    /**
+     * 向上搜索，直到有一个父目录包含.minecraft目录，然后返回这个父目录
+     * @param basedir 从哪个目录开始向上搜索
+     * @return 包含.minecraft目录的父目录
+     * @throws FileNotFoundException 找不到包含.minecraft目录的父目录
+     */
+    fun searchDotMinecraft(basedir: FileObj): FileObj?
     {
         try {
             if(basedir.contains(".minecraft"))
@@ -378,9 +358,43 @@ object LittleClientMain
             if(basedir.parent.parent.parent.parent.parent.parent.contains(".minecraft"))
                 return basedir.parent.parent.parent.parent.parent.parent
         } catch (e: NullPointerException) {
-            throw FileNotFoundException("The .minecraft directory not found.")
+            return null
         }
-        throw FileNotFoundException("The .minecraft directory not found.")
+        return null
     }
 
+    companion object {
+        /**
+         * 入口程序
+         */
+        @JvmStatic
+        fun main(args: Array<String>)
+        {
+            var ins: LittleClientMain? = null
+            try {
+                LogSys.initialize()
+                ins = LittleClientMain()
+                ins.run()
+            } catch (e: Exception) {
+                try {
+                    LogSys.error(e.javaClass.name)
+                    LogSys.error(e.stackTraceToString())
+                } catch (e: Exception) {
+                    System.err.println("------------------------")
+                    System.err.println(e.javaClass.name)
+                    System.err.println(e.stackTraceToString())
+                }
+
+                if(e !is BaseException)
+                {
+                    val content = "${e.javaClass.name}\n${e.message}\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
+                    if(DialogUtil.confirm("发生错误 ${ins!!.appVersion}", content))
+                        DialogUtil.error("调用堆栈", e.stackTraceToString())
+                } else {
+                    DialogUtil.error(e.getDisplayName() +" ${ins!!.appVersion}", e.message ?: "")
+                }
+                exitProcess(1)
+            }
+        }
+    }
 }

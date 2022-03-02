@@ -1,23 +1,66 @@
 package com.github.asforest.logging
 
+import java.util.*
+
 object LogSys
 {
     val handlers: MutableList<AbstractHandler> = mutableListOf()
 
-    @JvmStatic
-    fun debug(message: String) = message(LogLevel.DEBUG, message)
+    val rangedTags = LinkedList<String>()
 
-    fun info(message: String) = message(LogLevel.INFO, message)
+    fun debug(message: String) = message(LogLevel.DEBUG, "", message)
 
-    fun warn(message: String) = message(LogLevel.WARN, message)
+    fun info(message: String) = message(LogLevel.INFO, "", message)
 
-    fun error(message: String) = message(LogLevel.ERROR, message)
+    fun warn(message: String) = message(LogLevel.WARN, "", message)
 
-    fun message(level: LogLevel, message: String)
+    fun error(message: String) = message(LogLevel.ERROR, "", message)
+
+    fun debug(tag: String, message: String) = message(LogLevel.DEBUG, tag, message)
+
+    fun info(tag: String, message: String) = message(LogLevel.INFO, tag, message)
+
+    fun warn(tag: String, message: String) = message(LogLevel.WARN, tag, message)
+
+    fun error(tag: String, message: String) = message(LogLevel.ERROR, tag, message)
+
+    fun message(level: LogLevel, tag: String, message: String)
     {
         for (h in handlers)
             if(level.ordinal >= h.filter.ordinal)
-                h.onMessage(Message(level, message))
+                h.onMessage(Message(
+                    time = System.currentTimeMillis(),
+                    level = level,
+                    tag = tag,
+                    message = message,
+                    newLineIndent = false,
+                    rangedTags
+                ))
+    }
+
+    fun openRangedTag(tag: String)
+    {
+        if (rangedTags.lastOrNull().run { this == null || this != tag })
+            rangedTags.addLast(tag)
+    }
+
+    fun closeRangedTag()
+    {
+        if (rangedTags.isNotEmpty())
+            rangedTags.removeLast()
+    }
+
+    fun withRangedTag(tag: String, scope: () -> Unit)
+    {
+        val split = tag.split("/")
+
+        for (s in split)
+            openRangedTag(s)
+
+        scope()
+
+        for (s in split)
+            closeRangedTag()
     }
 
     fun initialize()
@@ -51,27 +94,9 @@ object LogSys
         }
     }
 
+    enum class LogLevel
+    {
+        ALL, DEBUG, INFO, WARN, ERROR, NONE
+    }
 }
 
-class Message(
-    val level: LogLevel,
-    val message: String,
-    val newLineIndent: Boolean = true,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-abstract class AbstractHandler(
-    private val logsys: LogSys,
-    val filter: LogLevel = LogLevel.ALL
-) {
-    open fun onInit() {}
-
-    open fun onDestroy() {}
-
-    abstract fun onMessage(message: Message)
-}
-
-enum class LogLevel
-{
-    ALL, DEBUG, INFO, WARN, ERROR, NONE
-}

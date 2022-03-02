@@ -10,13 +10,15 @@ class ConsoleHandler(logsys: LogSys) : AbstractHandler(logsys)
     {
         val ts = fmt.format(System.currentTimeMillis())
         val level = message.level.name.uppercase()
-        val prefix = String.format("[ %s %-1s ] ", ts, level[0])
+        val tag = if (message.tag != "") "[${message.tag}] " else ""
+        val rangedTags = message.rangedTags.joinToString("/").run { if (isNotEmpty()) "[$this] " else "" }
+        val prefix = String.format("[ %s %-5s ] %s%s", ts, level, rangedTags, tag)
 
         var text = prefix + message.message
         if(message.newLineIndent)
             text = text.replace(Regex("\n"), "\n"+prefix)
 
-        if(message.level.ordinal >= LogLevel.WARN.ordinal)
+        if(message.level.ordinal >= LogSys.LogLevel.WARN.ordinal)
             System.err.println(text)
         else
             System.out.println(text)

@@ -1,4 +1,4 @@
-package com.github.asforest.model
+package com.github.asforest.data
 
 class IndexResponse
 {
