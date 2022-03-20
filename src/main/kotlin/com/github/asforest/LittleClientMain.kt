@@ -51,16 +51,17 @@ class LittleClientMain
     /**
      * 更新目录（更新目录指从哪个目录起始，更新所有子目录）
      */
-    val updateDir = if(EnvUtil.isPackaged)
-    {
-        // .minecraft目录检测，如果在配置文件指定了base-path，则禁用搜索，改为使用用户指定的路径
-        if (options.basePath != "") EnvUtil.jarFile.parent + options.basePath
-        else searchDotMinecraft(workDir) ?: throw UpdateDirNotFoundException()
-    } else {
-        workDir // 调试状态下永远使用project/workdir作为更新目录
-    }.apply { mkdirs() }
+    val updateDir by lazy {
+        if(EnvUtil.isPackaged) {
+            // .minecraft目录检测，如果在配置文件指定了base-path，则禁用搜索，改为使用用户指定的路径
+            if (options.basePath != "") EnvUtil.jarFile.parent + options.basePath
+            else searchDotMinecraft(workDir) ?: throw UpdateDirNotFoundException()
+        } else {
+            workDir // 调试状态下永远使用project/workdir作为更新目录
+        }.apply { mkdirs() }
+    }
 
-        /**
+    /**
      * OkHttp客户端对象
      */
     val client = OkHttpClient.Builder()
@@ -375,7 +376,7 @@ class LittleClientMain
                 LogSys.initialize()
                 ins = LittleClientMain()
                 ins.run()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 try {
                     LogSys.error(e.javaClass.name)
                     LogSys.error(e.stackTraceToString())
@@ -388,11 +389,13 @@ class LittleClientMain
                 if(e !is BaseException)
                 {
                     val content = "${e.javaClass.name}\n${e.message}\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
+
                     if(DialogUtil.confirm("发生错误 ${ins!!.appVersion}", content))
                         DialogUtil.error("调用堆栈", e.stackTraceToString())
                 } else {
                     DialogUtil.error(e.getDisplayName() +" ${ins!!.appVersion}", e.message ?: "")
                 }
+
                 exitProcess(1)
             }
         }
