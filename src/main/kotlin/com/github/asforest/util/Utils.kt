@@ -1,9 +1,22 @@
 package com.github.asforest.util
 
+import com.github.asforest.file.FileObj
 import java.security.MessageDigest
 
-object HashUtil
+object Utils
 {
+    /**
+     * 统计文件数量
+     */
+    @JvmStatic
+    fun countFiles(directory: FileObj): Int
+    {
+        var count = 0
+        for (f in directory.files)
+            count += if(f.isFile) 1 else countFiles(f)
+        return count
+    }
+
     fun sha1(content: String): String = hash(content, "SHA1")
 
     fun md5(content: String): String = hash(content, "MD5")

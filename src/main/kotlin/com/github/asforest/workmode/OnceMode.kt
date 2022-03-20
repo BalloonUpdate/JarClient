@@ -1,10 +1,10 @@
 package com.github.asforest.workmode
 
 import com.github.asforest.logging.LogSys
-import com.github.asforest.util.FileObj
-import com.github.asforest.util.SimpleDirectory
-import com.github.asforest.util.SimpleFile
-import com.github.asforest.util.SimpleFileObject
+import com.github.asforest.file.FileObj
+import com.github.asforest.file.SimpleDirectory
+import com.github.asforest.file.SimpleFile
+import com.github.asforest.file.SimpleFileObject
 
 /**
  * 仅下载不存在的文件，如果文件存在，会直接跳过，不会做任何变动

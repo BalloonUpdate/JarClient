@@ -1,4 +1,4 @@
-package com.github.asforest.util
+package com.github.asforest.file
 
 import java.io.File
 import java.io.FileInputStream

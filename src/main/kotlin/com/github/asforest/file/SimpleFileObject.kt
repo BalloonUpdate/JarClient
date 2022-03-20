@@ -1,4 +1,4 @@
-package com.github.asforest.util
+package com.github.asforest.file
 
 abstract class SimpleFileObject(var name: String)
 

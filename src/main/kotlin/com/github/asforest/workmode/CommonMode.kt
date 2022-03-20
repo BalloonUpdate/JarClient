@@ -1,10 +1,10 @@
 package com.github.asforest.workmode
 
 import com.github.asforest.logging.LogSys
-import com.github.asforest.util.FileObj
-import com.github.asforest.util.SimpleDirectory
-import com.github.asforest.util.SimpleFile
-import com.github.asforest.util.SimpleFileObject
+import com.github.asforest.file.FileObj
+import com.github.asforest.file.SimpleDirectory
+import com.github.asforest.file.SimpleFile
+import com.github.asforest.file.SimpleFileObject
 
 /**
  * 默认同步指定文件夹内的所有文件，

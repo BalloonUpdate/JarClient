@@ -1,9 +1,9 @@
 package com.github.asforest.workmode
 
-import com.github.asforest.util.FileObj
-import com.github.asforest.util.SimpleDirectory
-import com.github.asforest.util.SimpleFile
-import com.github.asforest.util.SimpleFileObject
+import com.github.asforest.file.FileObj
+import com.github.asforest.file.SimpleDirectory
+import com.github.asforest.file.SimpleFile
+import com.github.asforest.file.SimpleFileObject
 import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 

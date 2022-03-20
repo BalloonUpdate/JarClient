@@ -2,6 +2,7 @@ package com.github.asforest.util
 
 import com.github.asforest.exception.ConnectionClosedException
 import com.github.asforest.exception.HttpRequestFailException
+import com.github.asforest.file.FileObj
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.FileOutputStream

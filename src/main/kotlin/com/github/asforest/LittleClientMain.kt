@@ -5,6 +5,10 @@ import com.github.asforest.exception.*
 import com.github.asforest.logging.LogSys
 import com.github.asforest.data.IndexResponse
 import com.github.asforest.data.Options
+import com.github.asforest.file.FileObj
+import com.github.asforest.file.SimpleDirectory
+import com.github.asforest.file.SimpleFile
+import com.github.asforest.file.SimpleFileObject
 import com.github.asforest.util.*
 import com.github.asforest.util.HttpUtil.httpDownload
 import com.github.asforest.util.HttpUtil.httpFetch
@@ -22,7 +26,6 @@ import java.io.FileNotFoundException
 import java.lang.Exception
 import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
-import java.util.jar.Manifest
 import javax.swing.JOptionPane
 import kotlin.system.exitProcess
 
@@ -31,7 +34,7 @@ class LittleClientMain
     /**
      * 应用程序版本号
      */
-    val appVersion by lazy { readVersionFromManifest() ?: "0.0.0" }
+    val appVersion by lazy { EnvUtil.version }
 
     /**
      * 主窗口对象
@@ -76,7 +79,7 @@ class LittleClientMain
         LogSys.debug("更新目录: ${updateDir.path}")
         LogSys.debug("工作目录: ${workDir.path}")
         LogSys.debug("程序目录: ${if(EnvUtil.isPackaged) EnvUtil.jarFile.parent.path else "dev-mode"}")
-        LogSys.debug("应用版本: $appVersion (${ManifestUtil.gitCommit})")
+        LogSys.debug("应用版本: $appVersion (${EnvUtil.gitCommit})")
         LogSys.closeRangedTag()
 
         // 初始化窗口
@@ -101,7 +104,7 @@ class LittleClientMain
             versionFile.makeParentDirs()
             isVersionOutdate = if(versionFile.exists) {
                 val versionCached = versionFile.content
-                val versionRecieved = HashUtil.sha1(rawData)
+                val versionRecieved = Utils.sha1(rawData)
                 versionCached != versionRecieved
             } else {
                 true
@@ -118,7 +121,7 @@ class LittleClientMain
             val remoteFiles = unserializeFileStructure(updateInfo as JSONArray)
 
             // 文件对比进度
-            val fileCount = FileUtil.countFiles(targetDirectory)
+            val fileCount = Utils.countFiles(targetDirectory)
             var scannedCount = 0
 
             // 开始文件对比过程
@@ -202,7 +205,7 @@ class LittleClientMain
         }
 
         if(options.versionCache.isNotEmpty())
-            versionFile.content = HashUtil.sha1(rawData)
+            versionFile.content = Utils.sha1(rawData)
 
         // 程序结束
         if(!options.autoExit)
@@ -213,6 +216,7 @@ class LittleClientMain
             val content = if(hasUpdate) "所有文件已是最新!" else "成功更新${news.size}个文件!"
             JOptionPane.showMessageDialog(null, content, title, JOptionPane.INFORMATION_MESSAGE)
         }
+        
         window.close()
     }
 
@@ -239,21 +243,6 @@ class LittleClientMain
             return Yaml().load(content)
         } catch (e: ScannerException) {
             throw UnableToDecodeException("配置文件无法解码:\n"+e.message)
-        }
-    }
-
-    /**
-     * 读取版本信息（程序打包成Jar后才有效）
-     * @return Application版本号，如果无法读取则返回null
-     */
-    fun readVersionFromManifest(): String?
-    {
-        if(!EnvUtil.isPackaged)
-            return null
-        JarFile(EnvUtil.jarFile.path).use { jar ->
-            jar.getInputStream(jar.getJarEntry("META-INF/MANIFEST.MF")).use {
-                return Manifest(it).mainAttributes.getValue("Application-Version")
-            }
         }
     }
 
