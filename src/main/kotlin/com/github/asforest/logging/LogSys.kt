@@ -66,6 +66,7 @@ object LogSys
     fun initialize()
     {
         addHandler(ConsoleHandler(this))
+        addHandler(FileHandler(this))
     }
 
     fun destory()

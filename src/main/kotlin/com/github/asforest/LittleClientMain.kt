@@ -118,7 +118,7 @@ class LittleClientMain
         {
             // 对比文件差异
             val targetDirectory = updateDir
-            val remoteFiles = unserializeFileStructure(updateInfo as JSONArray)
+            val remoteFiles = unserializeFileStructure(updateInfo)
 
             // 文件对比进度
             val fileCount = Utils.countFiles(targetDirectory)
@@ -216,7 +216,7 @@ class LittleClientMain
             val content = if(hasUpdate) "所有文件已是最新!" else "成功更新${news.size}个文件!"
             JOptionPane.showMessageDialog(null, content, title, JOptionPane.INFORMATION_MESSAGE)
         }
-        
+
         window.close()
     }
 
@@ -301,7 +301,7 @@ class LittleClientMain
         return IndexResponse().apply {
             common_mode = (resp["common_mode"] as JSONArray).map { it as String }.toTypedArray()
             once_mode = (resp["once_mode"]  as JSONArray).map { it as String }.toTypedArray()
-            updateUrl = baseurl + if (update.indexOf("?") !== -1) update else "$update.yml"
+            updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.yml"
             updateSource = baseurl + findSource(update, update) + "/"
         }
     }
@@ -354,13 +354,14 @@ class LittleClientMain
     }
 
     companion object {
+        lateinit var ins: LittleClientMain
+
         /**
          * 入口程序
          */
         @JvmStatic
         fun main(args: Array<String>)
         {
-            var ins: LittleClientMain? = null
             try {
                 LogSys.initialize()
                 ins = LittleClientMain()
@@ -385,6 +386,7 @@ class LittleClientMain
                     DialogUtil.error(e.getDisplayName() +" ${ins!!.appVersion}", e.message ?: "")
                 }
 
+                LogSys.destory()
                 exitProcess(1)
             }
         }
