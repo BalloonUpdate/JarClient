@@ -1,6 +1,7 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Date
 import java.text.SimpleDateFormat
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 fun getVersionName(tagName: String) = if(tagName.startsWith("v")) tagName.substring(1) else tagName
 val gitTagName: String? get() = Regex("(?<=refs/tags/).*").find(System.getenv("GITHUB_REF") ?: "")?.value
@@ -8,72 +9,50 @@ val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
 val debugVersion: String get() = System.getenv("DBG_VERSION") ?: "0.0.0"
 
-val mainClassPath = "com.github.asforest.LittleClientMain"
-
 group = "com.github.asforest"
 version = gitTagName?.run { getVersionName(this) } ?: debugVersion
 
 plugins {
-    kotlin("jvm") version "1.5.10"
+    kotlin("jvm") version "1.6.10"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
     application
 }
 
 repositories {
-//    maven { setUrl("http://maven.aliyun.com/nexus/content/groups/public/") }
     mavenCentral()
 }
 
 dependencies {
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.yaml:snakeyaml:1.30")
-    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("org.json:json:20211205")
     implementation("com.hrakaroo:glob:0.9.0")
-    // implementation(fileTree("libs") {include("*.jar")})
-
-    testImplementation(kotlin("test"))
 }
 
-tasks.test {
-    useJUnit()
-}
 
-tasks.withType<KotlinCompile>() {
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
 application {
-    mainClass.set(mainClassPath)
+    mainClass.set("com.github.asforest.LittleClientMain")
 }
 
-tasks.jar {
+tasks.withType<ShadowJar> {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-    // 添加Manifest
     manifest {
-        attributes("Main-Class" to mainClassPath)
-        attributes("Application-Version" to archiveVersion.get())
-        attributes("Author" to "Asforest")
+        attributes("Version" to archiveVersion.get())
         attributes("Git-Commit" to (gitCommitSha ?: ""))
         attributes("Compile-Time" to timestamp)
         attributes("Compile-Time-Ms" to System.currentTimeMillis())
     }
 
-    // 复制依赖库
-    from(configurations.runtimeClasspath.get().map {
-        println("- "+it.name)
-        if (it.isDirectory) it else zipTree(it)//.matching { exclude("*") }
-    })
-
-    // 打包assets目录里的文件
-    from("assets")
-
-    // 打包源代码
-    sourceSets.main.get().allSource.sourceDirectories.map {
-        if(it.name != "resources")
-            from(it) {into("sources/"+it.name) }
+    for (dir in sourceSets.main.get().allSource.sourceDirectories)
+    {
+        from(dir) { into("project-sources/${dir.name}") }
     }
 
-    // 设置输出路径
     destinationDirectory.set(File(project.buildDir, "production"))
+    archiveClassifier.set("")
 }
