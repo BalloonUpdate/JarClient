@@ -301,7 +301,7 @@ class LittleClientMain
         return IndexResponse().apply {
             common_mode = (resp["common_mode"] as JSONArray).map { it as String }.toTypedArray()
             once_mode = (resp["once_mode"]  as JSONArray).map { it as String }.toTypedArray()
-            updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.yml"
+            updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.json"
             updateSource = baseurl + findSource(update, update) + "/"
         }
     }
