@@ -1,6 +1,7 @@
 package com.github.asforest.util
 
 import com.github.asforest.file.FileObj
+import java.lang.ClassCastException
 import java.security.MessageDigest
 
 object Utils
@@ -39,5 +40,14 @@ object Utils
             return sh.toString() + sl.toString()
         }
         return binary.joinToString("") { cvt(it) }
+    }
+
+    fun parseAsLong(number: Any): Long
+    {
+        return try {
+            (number as Int).toLong()
+        } catch (e: ClassCastException) {
+            number as Long
+        }
     }
 }

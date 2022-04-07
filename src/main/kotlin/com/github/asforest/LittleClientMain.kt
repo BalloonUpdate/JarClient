@@ -12,6 +12,7 @@ import com.github.asforest.file.SimpleFileObject
 import com.github.asforest.util.*
 import com.github.asforest.util.HttpUtil.httpDownload
 import com.github.asforest.util.HttpUtil.httpFetch
+import com.github.asforest.util.Utils.parseAsLong
 import com.github.asforest.window.MainWin
 import com.github.asforest.workmode.AbstractMode
 import com.github.asforest.workmode.CommonMode
@@ -23,6 +24,7 @@ import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.scanner.ScannerException
 import java.io.File
 import java.io.FileNotFoundException
+import java.lang.ClassCastException
 import java.lang.Exception
 import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
@@ -261,9 +263,9 @@ class LittleClientMain
                 val files = f["children"] as JSONArray
                 res += SimpleDirectory(name, unserializeFileStructure(files))
             } else {
-                val length = f["length"] as Int
+                val length = parseAsLong(f["length"])
                 val hash = f["hash"] as String
-                val modified =( f["modified"] ?: -1 ) as Int
+                val modified = parseAsLong(f["modified"] ?: -1 )
                 res += SimpleFile(name, length.toLong(), hash, modified.toLong())
             }
         }
