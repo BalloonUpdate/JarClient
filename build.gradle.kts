@@ -35,7 +35,7 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("com.github.asforest.LittleClientMain")
+    mainClass.set("com.github.asforest.GraphicsMain")
 }
 
 tasks.withType<ShadowJar> {
@@ -46,6 +46,7 @@ tasks.withType<ShadowJar> {
         attributes("Git-Commit" to (gitCommitSha ?: ""))
         attributes("Compile-Time" to timestamp)
         attributes("Compile-Time-Ms" to System.currentTimeMillis())
+        attributes("Premain-Class" to "com.github.asforest.JavaAgentMain")
     }
 
     for (dir in sourceSets.main.get().allSource.sourceDirectories)

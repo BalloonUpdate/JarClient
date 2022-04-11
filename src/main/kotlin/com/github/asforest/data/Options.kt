@@ -1,6 +1,5 @@
 package com.github.asforest.data
 
-import com.github.asforest.LittleClientMain
 import com.github.asforest.exception.ConfigFileException
 
 data class Options (

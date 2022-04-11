@@ -78,7 +78,7 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
                                 markAsOld(l)
                                 markAsNew(r, l)
                             } else if (modifiedTimePrioritized && r.modified != -1L) {
-                                LogSys.info("更新文件mtime: " + l.relativizedBy(base) + " => " + r.modified)
+                                LogSys.debug("更新文件mtime: " + l.relativizedBy(base) + " => " + r.modified)
 
                                 // 更新修改时间
                                 l._file.setLastModified(r.modified)

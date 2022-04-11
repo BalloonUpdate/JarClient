@@ -63,12 +63,6 @@ object LogSys
             closeRangedTag()
     }
 
-    fun initialize()
-    {
-        addHandler(ConsoleHandler(this))
-        addHandler(FileHandler(this))
-    }
-
     fun destory()
     {
         handlers.forEach { it.onDestroy() }
