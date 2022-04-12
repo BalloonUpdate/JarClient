@@ -9,7 +9,7 @@ val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
 val debugVersion: String get() = System.getenv("DBG_VERSION") ?: "0.0.0"
 
-group = "com.github.asforest"
+group = "com.github.fireworkupdate"
 version = gitTagName?.run { getVersionName(this) } ?: debugVersion
 
 plugins {
@@ -25,7 +25,7 @@ repositories {
 dependencies {
     implementation("org.yaml:snakeyaml:1.30")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("org.json:json:20211205")
+    implementation("org.json:json:20220320")
     implementation("com.hrakaroo:glob:0.9.0")
 }
 
