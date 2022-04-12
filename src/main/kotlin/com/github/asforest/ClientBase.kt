@@ -34,10 +34,12 @@ open class ClientBase
      */
     val workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
 
+    val progDir = if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir
+
     /**
      * 配置文件对象
      */
-    val options = Options.CreateFromMap(readConfig((if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir) + "config.yml"))
+    val options = Options.CreateFromMap(readConfig(progDir + "config.yml"))
 
     /**
      * 更新目录（更新目录指从哪个目录起始，更新所有子目录）

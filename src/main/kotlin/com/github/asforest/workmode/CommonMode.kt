@@ -12,8 +12,8 @@ import com.github.asforest.file.SimpleFileObject
  * 不匹配的文件会被忽略掉(不做任何变动)
  * 匹配的文件会与服务器进行同步
  */
-class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, modifiedTimePrioritized: Boolean)
-    : AbstractMode(regexes, local, remote, modifiedTimePrioritized)
+class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, opt: Options)
+    : WorkmodeBase(regexes, local, remote, opt)
 {
     override fun compare(onScan: ((file: FileObj) -> Unit)?)
     {
@@ -33,7 +33,7 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
         remote: Array<SimpleFileObject>,
         base: FileObj,
         onScan: OnScanCallback?,
-        indent: String =""
+        indent: String = ""
     ) {
         for (r in remote)
         {
@@ -64,12 +64,21 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
                 } else if(r is SimpleFile) { // 远程文件是一个文件
                     if(l.isFile) // 本地文件和远程文件都是文件，则对比校验
                     {
-                        var noModifiedWithinMTime = false
+                        var isUpdateToDate = false
 
-                        if(this.modifiedTimePrioritized)
-                            noModifiedWithinMTime = r.modified == l.modified
+                        if(opt.checkModified)
+                        {
+                            isUpdateToDate = if (opt.androidPatch.isNotEmpty()) {
+                                val rpath = l.relativizedBy(base)
+                                opt.androidPatch[rpath]?.run {
+                                    l.modified == first && r.modified == second
+                                } ?: false
+                            } else {
+                                l.modified == r.modified
+                            }
+                        }
 
-                        if(!noModifiedWithinMTime)
+                        if(!isUpdateToDate)
                         {
                             val lsha1 = l.sha1
                             if(lsha1 != r.hash)
@@ -77,15 +86,12 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
                                 LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
                                 markAsOld(l)
                                 markAsNew(r, l)
-                            } else if (modifiedTimePrioritized && r.modified != -1L) {
-                                LogSys.debug("更新文件mtime: " + l.relativizedBy(base) + " => " + r.modified)
-
+                            } else if (opt.checkModified && r.modified != -1L) {
                                 // 更新修改时间
-                                l._file.setLastModified(r.modified)
+                                if (opt.androidPatch.isEmpty())
+                                    l._file.setLastModified(r.modified * 1000)
                             }
                         }
-
-
                     } else { // 本地文件是一个目录
                         markAsOld(l)
                         markAsNew(r, l)

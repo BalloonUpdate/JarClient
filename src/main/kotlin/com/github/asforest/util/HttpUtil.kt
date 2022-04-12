@@ -94,7 +94,7 @@ object HttpUtil
                 }
             }
 
-            file._file.setLastModified(modifed)
+            file._file.setLastModified(modifed * 1000)
         } catch (e: ConnectException) {
             throw ConnectionClosedException("无法连接到服务器(通常是网络原因或者配置不正确)")
         } catch (e: SocketException) {

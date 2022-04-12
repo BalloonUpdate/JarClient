@@ -18,6 +18,18 @@ object Utils
         return count
     }
 
+    @JvmStatic
+    fun walkFile(directory: FileObj, base: FileObj, callback: (dir: FileObj, path: String) -> Unit)
+    {
+        for (file in directory.files)
+        {
+            if (file.isFile)
+                callback(file, file.relativizedBy(base))
+            else
+                walkFile(file, base, callback)
+        }
+    }
+
     fun sha1(content: String): String = hash(content, "SHA1")
 
     fun md5(content: String): String = hash(content, "MD5")

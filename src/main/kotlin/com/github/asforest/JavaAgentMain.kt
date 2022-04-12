@@ -1,15 +1,18 @@
 package com.github.asforest
 
 import com.github.asforest.file.FileObj
+import com.github.asforest.file.SimpleDirectory
+import com.github.asforest.file.SimpleFile
 import com.github.asforest.logging.ConsoleHandler
 import com.github.asforest.logging.FileHandler
 import com.github.asforest.logging.LogSys
 import com.github.asforest.util.EnvUtil
 import com.github.asforest.util.HttpUtil
 import com.github.asforest.util.Utils
-import com.github.asforest.workmode.AbstractMode
+import com.github.asforest.workmode.WorkmodeBase
 import com.github.asforest.workmode.CommonMode
 import com.github.asforest.workmode.OnceMode
+import org.json.JSONObject
 import java.awt.Desktop
 import java.lang.instrument.Instrumentation
 
@@ -19,6 +22,7 @@ class JavaAgentMain : ClientBase()
     {
         // 输出调试信息
         LogSys.openRangedTag("环境")
+        LogSys.info("初始化...")
         LogSys.info("更新目录: ${updateDir.path}")
         LogSys.info("工作目录: ${workDir.path}")
         LogSys.info("程序目录: ${if(EnvUtil.isPackaged) EnvUtil.jarFile.parent.path else "dev-mode"}")
@@ -33,6 +37,27 @@ class JavaAgentMain : ClientBase()
         LogSys.debug("请求的URL: ${indexResponse.updateUrl}")
         val rawData = HttpUtil.httpFetch(client, indexResponse.updateUrl, options.noCache)
         val updateInfo = parseAsJsonArray(rawData)
+
+        // 安卓补丁
+        val patchFile = if (options.checkModified && options.androidPatch != null) progDir + options.androidPatch else null
+        val patchContent = mutableMapOf<String, Pair<Long, Long>>()
+
+        if (patchFile != null)
+        {
+            // 读取
+            if (patchFile.exists)
+            {
+                val json = JSONObject(patchFile.content)
+                for (key in json.keys())
+                {
+                    val value = json.getString(key)
+                    val sp = value.split(":")
+                    patchContent[key] = Pair(sp[0].toLong(), sp[1].toLong())
+                }
+            }
+
+            LogSys.info("读取到${patchContent.size}条补丁规则")
+        }
 
         // 使用版本缓存
         var isVersionOutdate = true
@@ -52,7 +77,7 @@ class JavaAgentMain : ClientBase()
 
         LogSys.info("正在计算文件差异...")
         // 计算文件差异
-        var diff = AbstractMode.Difference()
+        var diff = WorkmodeBase.Difference()
 
         if(isVersionOutdate)
         {
@@ -61,12 +86,17 @@ class JavaAgentMain : ClientBase()
             val remoteFiles = unserializeFileStructure(updateInfo)
 
             // 文件对比进度
-            val fileCount = Utils.countFiles(targetDirectory)
+//            val fileCount = Utils.countFiles(targetDirectory)
             var scannedCount = 0
+
+            val opt = WorkmodeBase.Options(
+                checkModified = options.checkModified,
+                androidPatch = patchContent,
+            )
 
             // 开始文件对比过程
             LogSys.openRangedTag("普通对比")
-            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, options.modificationTimeCheck)() {
+            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, opt)() {
                 scannedCount += 1
                 print(".")
             }
@@ -75,7 +105,7 @@ class JavaAgentMain : ClientBase()
             LogSys.closeRangedTag()
 
             LogSys.openRangedTag("补全对比")
-            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, options.modificationTimeCheck)()
+            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, opt)()
             LogSys.closeRangedTag()
 
             // 输出差异信息
@@ -101,12 +131,6 @@ class JavaAgentMain : ClientBase()
             {
                 val url = indexResponse.updateSource + relativePath
                 val file = targetDirectory + relativePath
-                val rateUpdatePeriod = 1000 // 一秒更新一次下载速度，保证准确（区间太小易导致下载速度上下飘忽）
-
-                // 获取下载开始（首个区段开始）时间戳，并且第一次速度采样从第100ms就开始，而非1s，避免多个小文件下载时速度一直显示为0
-                var timeStart = System.currentTimeMillis() - (rateUpdatePeriod - 100)
-                var downloadSpeedRaw = 0.0  // 初始化下载速度为 0
-                var bytesDownloaded = 0L    // 初始化时间区段内下载的大小为 0
 
                 val lengthExpected = lm.first
                 val midifed = lm.second
@@ -114,14 +138,7 @@ class JavaAgentMain : ClientBase()
                 LogSys.info("正在下载: ${file.name} (${downloadedCount + 1}/${diff.newFiles.values.size})")
                 LogSys.debug("发起请求: ${url}, 写入文件: ${file.path}")
 
-                HttpUtil.httpDownload(
-                    client,
-                    url,
-                    file,
-                    lengthExpected,
-                    midifed,
-                    options.noCache
-                ) { packageLength, received, total -> }
+                HttpUtil.httpDownload(client, url, file, lengthExpected, midifed, options.noCache) { packageLength, received, total -> }
 
                 downloadedCount += 1
             }
@@ -129,6 +146,24 @@ class JavaAgentMain : ClientBase()
 
         if(options.versionCache.isNotEmpty())
             versionFile.content = Utils.sha1(rawData)
+
+        // 安卓补丁
+        if (patchFile != null)
+        {
+            val rFiles = SimpleDirectory("", unserializeFileStructure(updateInfo))
+            val ff = mutableMapOf<String, String>()
+            Utils.walkFile(updateDir, updateDir) { file, path ->
+                var temp: SimpleDirectory = rFiles
+                val sp = path.split("/")
+                for (s in sp.subList(0, sp.size - 1))
+                    temp = (temp[s] ?: return@walkFile) as SimpleDirectory
+                val remote = (temp[sp.last()] ?: return@walkFile) as SimpleFile
+
+                ff[path] = "${file.modified}:${remote.modified}"
+            }
+
+            patchFile.content = JSONObject(ff).toString(4)
+        }
 
         val totalUpdated = diff.newFiles.size + diff.oldFiles.size
         if (totalUpdated == 0)
@@ -142,7 +177,7 @@ class JavaAgentMain : ClientBase()
         @JvmStatic
         fun premain(agentArgs: String?, ins: Instrumentation)
         {
-            if (Desktop.isDesktopSupported())
+            if (Desktop.isDesktopSupported() && agentArgs != "force-agent")
             {
                 GraphicsMain.main(arrayOf())
                 return
@@ -160,9 +195,9 @@ class JavaAgentMain : ClientBase()
                     LogSys.error(e.javaClass.name)
                     LogSys.error(e.stackTraceToString())
                 } catch (e: Exception) {
-                    System.err.println("------------------------")
-                    System.err.println(e.javaClass.name)
-                    System.err.println(e.stackTraceToString())
+                    println("------------------------")
+                    println(e.javaClass.name)
+                    println(e.stackTraceToString())
                 }
 
                 throw e

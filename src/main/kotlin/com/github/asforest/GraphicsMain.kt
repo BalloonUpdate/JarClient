@@ -10,10 +10,9 @@ import com.github.asforest.util.*
 import com.github.asforest.util.HttpUtil.httpDownload
 import com.github.asforest.util.HttpUtil.httpFetch
 import com.github.asforest.window.MainWin
-import com.github.asforest.workmode.AbstractMode
+import com.github.asforest.workmode.WorkmodeBase
 import com.github.asforest.workmode.CommonMode
 import com.github.asforest.workmode.OnceMode
-import java.io.File
 import java.lang.Exception
 import javax.swing.JOptionPane
 import kotlin.system.exitProcess
@@ -65,7 +64,7 @@ class GraphicsMain : ClientBase()
         }
 
         // 计算文件差异
-        var diff = AbstractMode.Difference()
+        var diff = WorkmodeBase.Difference()
 
         if(isVersionOutdate)
         {
@@ -77,9 +76,14 @@ class GraphicsMain : ClientBase()
             val fileCount = Utils.countFiles(targetDirectory)
             var scannedCount = 0
 
+            val opt = WorkmodeBase.Options(
+                checkModified = options.checkModified,
+                androidPatch = mapOf(),
+            )
+
             // 开始文件对比过程
             LogSys.openRangedTag("普通对比")
-            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, options.modificationTimeCheck)() {
+            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, opt)() {
                 scannedCount += 1
                 window.progress1text = "正在检查资源..."
                 window.stateText = it.name
@@ -89,7 +93,7 @@ class GraphicsMain : ClientBase()
             LogSys.closeRangedTag()
 
             LogSys.openRangedTag("补全对比")
-            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, options.modificationTimeCheck)()
+            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, opt)()
             LogSys.closeRangedTag()
 
             // 输出差异信息

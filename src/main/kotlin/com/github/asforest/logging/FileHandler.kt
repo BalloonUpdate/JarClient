@@ -1,8 +1,6 @@
 package com.github.asforest.logging
 
 import com.github.asforest.file.FileObj
-import com.github.asforest.util.EnvUtil
-import java.io.File
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
 
@@ -18,7 +16,7 @@ class FileHandler(logsys: LogSys, val logFile: FileObj) : AbstractHandler(logsys
         else
             logFile.content = ""
 
-        fileWriter =  PrintWriter(logFile._file)
+        fileWriter = PrintWriter(logFile._file)
     }
 
     override fun onDestroy() {

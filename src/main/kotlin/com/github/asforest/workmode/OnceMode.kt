@@ -14,8 +14,8 @@ import com.github.asforest.file.SimpleFileObject
  * 之后除非这个文件夹被删除，否则不会再进行下载任何相关文件
  * 顺便，此模式也不具有创建空文件夹的功能
  */
-class OnceMode (regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, modifiedTimePrioritized: Boolean)
-    : AbstractMode(regexes, local, remote, modifiedTimePrioritized)
+class OnceMode (regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, opt: Options)
+    : WorkmodeBase(regexes, local, remote, opt)
 {
     override fun compare(onScan: ((file: FileObj) -> Unit)?)
     {

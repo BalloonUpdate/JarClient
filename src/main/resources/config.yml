@@ -20,12 +20,19 @@ server: http://127.0.0.1:8850/index.json
 # 如果关闭此选项，每次程序启动时都会自动检查缺失的文件（这也是默认值）
 # 参与更新文件的总大小在100m以下时，开启此功能不会有明显的性能改善（但文件越大效果越明显）
 # 从服务端修改文件不受此选项的影响
-# version-cache: .minecraft/client-version.txt
+# 起始目录：程序所在目录
+# version-cache: client-version.txt
 
 # 解除注释之后会在每个请求后面跟上?t=<xx>（<xx>会被换成实际时间戳秒）以解决CDN缓存的问题
 # 这里的t也可以换成别的参数名
-#no-cache: t
+# no-cache: t
 
 # 启用文件修改时间对比功能，开启后可大幅度加快下次启动时的'检查更新资源'的速度。并且没有no-cache选项所带来的副作用
 # 推荐开启此功能。文件体积越大，此功能效果越明显
-#modification-time-prioritized: true
+check-modified: true
+
+# 开启适用于安卓系统的文件修改时间补丁，如果你是在安卓端适用，非常建议开启
+# 可以提升check-modified开始时的文件差异检查效率
+# 此选项仅在开启check-modified时生效，可以指定一个路径用来存放文件修改时间缓存文件
+# 起始目录：程序所在目录
+android-patch: android-patch.json

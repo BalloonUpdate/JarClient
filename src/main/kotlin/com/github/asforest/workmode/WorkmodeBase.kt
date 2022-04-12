@@ -9,27 +9,27 @@ import java.lang.RuntimeException
 
 typealias OnScanCallback = (file: FileObj) -> Unit
 
-abstract class AbstractMode
+abstract class WorkmodeBase
 {
     val regexes: List<String>
     val base: FileObj
     val local: FileObj
     val remote: Array<SimpleFileObject>
     val result: Difference = Difference()
-    var modifiedTimePrioritized: Boolean
+    var opt: Options
 
     /**
      * @param regexes 要比较的路径
      * @param local 要比较的本地文件
      * @param remote 要比较的远程文件
      */
-    constructor(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, modifiedTimePrioritized: Boolean)
+    constructor(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, opt: Options)
     {
         this.regexes = regexes
         this.base = local
         this.local = local
         this.remote = remote
-        this.modifiedTimePrioritized = modifiedTimePrioritized
+        this.opt = opt
     }
 
     /**
@@ -117,4 +117,9 @@ abstract class AbstractMode
             newFiles += other.newFiles
         }
     }
+
+    data class Options(
+        val androidPatch: Map<String, Pair<Long, Long>>,
+        val checkModified: Boolean
+    )
 }

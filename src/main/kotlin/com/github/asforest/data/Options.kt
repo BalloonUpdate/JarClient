@@ -8,26 +8,21 @@ data class Options (
     val basePath: String,
     val versionCache: String,
     val noCache: String?,
-    val modificationTimeCheck: Boolean
+    val checkModified: Boolean,
+    val androidPatch: String?,
 ) {
     companion object {
         @JvmStatic
         fun CreateFromMap(map: Map<String, Any>): Options
         {
-            val server = getOption<String>(map, "server") ?: throw ConfigFileException("配置文件中的server选项无效")
-            val autoExit = getOption<Boolean>(map, "auto-exit") ?: false
-            val basePath = getOption<String>(map, "base-path") ?: ""
-            val versionCache = getOption<String>(map, "version-cache") ?: ""
-            val noCache: String? = getOption<String>(map, "no-cache")
-            val modificationTimeCheck = getOption<Boolean>(map, "modification-time-prioritized") ?: false
-
             return Options(
-                server = server,
-                autoExit = autoExit,
-                basePath = basePath,
-                versionCache = versionCache,
-                noCache = noCache,
-                modificationTimeCheck = modificationTimeCheck
+                server = getOption<String>(map, "server") ?: throw ConfigFileException("配置文件中的server选项无效"),
+                autoExit = getOption<Boolean>(map, "auto-exit") ?: false,
+                basePath = getOption<String>(map, "base-path") ?: "",
+                versionCache = getOption<String>(map, "version-cache") ?: "",
+                noCache = getOption<String>(map, "no-cache"),
+                checkModified = getOption<Boolean>(map, "check-modified") ?: false,
+                androidPatch = getOption<String>(map, "android-patch")
             )
         }
 

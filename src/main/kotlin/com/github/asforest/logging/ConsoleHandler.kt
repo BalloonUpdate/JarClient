@@ -18,10 +18,10 @@ class ConsoleHandler(logsys: LogSys, var logLevel: LogSys.LogLevel) : AbstractHa
 
         if (message.level.ordinal >= logLevel.ordinal)
         {
-            if(message.level.ordinal >= LogSys.LogLevel.WARN.ordinal)
-                System.err.println(text)
-            else
-                System.out.println(text)
+            println(text)
+//                System.err.println(text)
+//            else
+//                System.out.println(text)
         }
     }
 }
