@@ -34,7 +34,7 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("com.github.asforest.GraphicsMain")
+    mainClass.set("com.github.fireworkupdate.GraphicsMain")
 }
 
 tasks.withType<ShadowJar> {
@@ -45,7 +45,7 @@ tasks.withType<ShadowJar> {
         attributes("Git-Commit" to (gitCommitSha ?: ""))
         attributes("Compile-Time" to timestamp)
         attributes("Compile-Time-Ms" to System.currentTimeMillis())
-        attributes("Premain-Class" to "com.github.asforest.JavaAgentMain")
+        attributes("Premain-Class" to "com.github.fireworkupdate.JavaAgentMain")
     }
 
     destinationDirectory.set(File(project.buildDir, "production"))
