@@ -37,13 +37,15 @@ class JavaAgentMain : ClientBase()
         val updateInfo = parseAsJsonArray(rawData)
 
         // 读取安卓补丁内容
-        val patchFile = if (options.checkModified && options.androidPatch != null) progDir + options.androidPatch else null
-        val androidPatch = AndroidPatch(patchFile)
-        val loaded = androidPatch.load()
-        if (loaded == null)
-            LogSys.info("没有找到补丁数据")
-        else
-            LogSys.info("读取到 $loaded 条补丁数据")
+        val androidPatch = if (options.checkModified && options.androidPatch != null) AndroidPatch(progDir + options.androidPatch) else null
+        if (androidPatch != null)
+        {
+            val loaded = androidPatch.load()
+            if (loaded == null)
+                LogSys.info("没有找到补丁数据")
+            else
+                LogSys.info("读取到 $loaded 条补丁数据")
+        }
 
         // 使用版本缓存
         var isVersionOutdate = true
@@ -84,9 +86,9 @@ class JavaAgentMain : ClientBase()
             LogSys.openRangedTag("普通对比")
             diff = CommonModeCalculator(targetDirectory, remoteFiles, opt)() {
                 scannedCount += 1
-                LogSys.info(".", newLine = false)
+                print(".")
             }
-            LogSys.info("\n", newLine = false)
+            println()
 
             LogSys.closeRangedTag()
 
@@ -132,8 +134,7 @@ class JavaAgentMain : ClientBase()
             versionFile.content = Utils.sha1(rawData)
 
         // 更新安卓补丁内容
-        if (androidPatch.isActive)
-            androidPatch.update(updateDir, remoteFiles)
+        androidPatch?.update(updateDir, remoteFiles)
 
         // 显示更新小节
         val totalUpdated = diff.newFiles.size + diff.oldFiles.size

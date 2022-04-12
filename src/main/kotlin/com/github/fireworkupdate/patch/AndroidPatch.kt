@@ -7,10 +7,9 @@ import com.github.fireworkupdate.data.SimpleFileObject
 import com.github.fireworkupdate.util.Utils
 import org.json.JSONObject
 
-class AndroidPatch(val patchFile: FileObj?)
+class AndroidPatch(val patchFile: FileObj)
 {
     val content = mutableMapOf<String, Pair<Long, Long>>()
-    val isActive = patchFile != null
 
     /**
      * 从补丁文件读取补丁数据
@@ -18,7 +17,7 @@ class AndroidPatch(val patchFile: FileObj?)
      */
     fun load(): Int?
     {
-        if (patchFile == null || !patchFile.exists)
+        if (!patchFile.exists)
             return null
 
         // 读取
@@ -41,9 +40,6 @@ class AndroidPatch(val patchFile: FileObj?)
      */
     fun update(local: FileObj, remote: List<SimpleFileObject>)
     {
-        if (patchFile == null || !patchFile.exists)
-            throw IllegalStateException("未启用补丁文件时不能更新补丁文件的内容")
-
         val data = mutableMapOf<String, String>()
         val rFiles = SimpleDirectory("", remote)
 
@@ -63,13 +59,5 @@ class AndroidPatch(val patchFile: FileObj?)
     operator fun get(path: String): Pair<Long, Long>?
     {
         return content[path]
-    }
-
-    companion object {
-        @JvmStatic
-        fun Disabled(): AndroidPatch
-        {
-            return AndroidPatch(null)
-        }
     }
 }

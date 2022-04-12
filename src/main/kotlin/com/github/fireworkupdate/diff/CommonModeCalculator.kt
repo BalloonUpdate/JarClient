@@ -86,9 +86,10 @@ class CommonModeCalculator(local: FileObj, remote: List<SimpleFileObject>, opt: 
 
         if(opt.checkModified)
         {
-            isUpToDate = if (opt.androidPatch.isActive) {
+            val ap = opt.androidPatch
+            isUpToDate = if (ap != null) {
                 val rpath = l.relativizedBy(base)
-                opt.androidPatch[rpath]?.run { l.modified == first && r.modified == second } ?: false
+                ap[rpath]?.run { l.modified == first && r.modified == second } ?: false
             } else {
                 l.modified == r.modified
             }
@@ -104,7 +105,7 @@ class CommonModeCalculator(local: FileObj, remote: List<SimpleFileObject>, opt: 
                 markAsNew(r, l)
             } else if (opt.checkModified && r.modified != -1L) {
                 // 更新修改时间
-                if (!opt.androidPatch.isActive)
+                if (opt.androidPatch != null)
                     l.file.setLastModified(r.modified * 1000)
             }
         }

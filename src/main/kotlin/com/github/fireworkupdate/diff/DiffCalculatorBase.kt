@@ -130,7 +130,7 @@ abstract class DiffCalculatorBase(val local: FileObj, val remote: List<SimpleFil
         /**
          * 针对安卓系统的文件修改时间补丁
          */
-        val androidPatch: AndroidPatch,
+        val androidPatch: AndroidPatch?,
 
         /**
          * 是否检测文件修改时间，而不是每次都完整检查文件校验，此选项可以节省时间

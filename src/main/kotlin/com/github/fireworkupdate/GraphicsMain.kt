@@ -81,7 +81,7 @@ class GraphicsMain : ClientBase()
             val opt = DiffCalculatorBase.Options(
                 patterns = indexResponse.commonMode,
                 checkModified = options.checkModified,
-                androidPatch = AndroidPatch.Disabled(),
+                androidPatch = null,
             )
 
             // 开始文件对比过程
