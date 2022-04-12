@@ -1,18 +1,20 @@
 @file:JvmName("LittleClientMain")
 package com.github.asforest
 
-import com.github.asforest.exception.*
-import com.github.asforest.file.FileObj
+import com.github.asforest.exception.BaseException
+import com.github.asforest.data.FileObj
 import com.github.asforest.logging.ConsoleHandler
 import com.github.asforest.logging.FileHandler
 import com.github.asforest.logging.LogSys
-import com.github.asforest.util.*
 import com.github.asforest.util.HttpUtil.httpDownload
 import com.github.asforest.util.HttpUtil.httpFetch
-import com.github.asforest.window.MainWin
-import com.github.asforest.workmode.WorkmodeBase
-import com.github.asforest.workmode.CommonMode
-import com.github.asforest.workmode.OnceMode
+import com.github.asforest.gui.MainWin
+import com.github.asforest.diff.DiffCalculatorBase
+import com.github.asforest.diff.CommonModeCalculator
+import com.github.asforest.diff.OnceModeCalculator
+import com.github.asforest.patch.AndroidPatch
+import com.github.asforest.util.EnvUtil
+import com.github.asforest.util.Utils
 import java.lang.Exception
 import javax.swing.JOptionPane
 import kotlin.system.exitProcess
@@ -64,7 +66,7 @@ class GraphicsMain : ClientBase()
         }
 
         // 计算文件差异
-        var diff = WorkmodeBase.Difference()
+        var diff = DiffCalculatorBase.Difference()
 
         if(isVersionOutdate)
         {
@@ -76,14 +78,15 @@ class GraphicsMain : ClientBase()
             val fileCount = Utils.countFiles(targetDirectory)
             var scannedCount = 0
 
-            val opt = WorkmodeBase.Options(
+            val opt = DiffCalculatorBase.Options(
+                patterns = indexResponse.commonMode,
                 checkModified = options.checkModified,
-                androidPatch = mapOf(),
+                androidPatch = AndroidPatch.Disabled(),
             )
 
             // 开始文件对比过程
             LogSys.openRangedTag("普通对比")
-            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, opt)() {
+            diff = CommonModeCalculator(targetDirectory, remoteFiles, opt)() {
                 scannedCount += 1
                 window.progress1text = "正在检查资源..."
                 window.stateText = it.name
@@ -93,7 +96,7 @@ class GraphicsMain : ClientBase()
             LogSys.closeRangedTag()
 
             LogSys.openRangedTag("补全对比")
-            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, opt)()
+            diff += OnceModeCalculator(targetDirectory, remoteFiles, opt)()
             LogSys.closeRangedTag()
 
             // 输出差异信息
@@ -177,6 +180,21 @@ class GraphicsMain : ClientBase()
         window.close()
     }
 
+    object DialogUtil
+    {
+        @JvmStatic
+        fun confirm(title: String, content: String): Boolean
+            = JOptionPane.showConfirmDialog(null, content, title, JOptionPane.YES_NO_OPTION) == 0
+
+        @JvmStatic
+        fun error(title: String, content: String)
+            = JOptionPane.showMessageDialog(null, content, title, JOptionPane.ERROR_MESSAGE)
+
+        @JvmStatic
+        fun info(title: String, content: String)
+            = JOptionPane.showMessageDialog(null, content, title, JOptionPane.INFORMATION_MESSAGE)
+    }
+
     companion object {
         lateinit var ins: GraphicsMain
 
@@ -207,10 +225,10 @@ class GraphicsMain : ClientBase()
                 {
                     val content = "${e.javaClass.name}\n${e.message}\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
 
-                    if(DialogUtil.confirm("发生错误 ${ins!!.appVersion}", content))
+                    if(DialogUtil.confirm("发生错误 ${ins.appVersion}", content))
                         DialogUtil.error("调用堆栈", e.stackTraceToString())
                 } else {
-                    DialogUtil.error(e.getDisplayName() +" ${ins!!.appVersion}", e.message ?: "")
+                    DialogUtil.error(e.getDisplayName() + " ${ins.appVersion}", e.message ?: "")
                 }
 
                 LogSys.destory()

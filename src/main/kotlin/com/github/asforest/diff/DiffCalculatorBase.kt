@@ -1,36 +1,28 @@
-package com.github.asforest.workmode
+package com.github.asforest.diff
 
-import com.github.asforest.file.FileObj
-import com.github.asforest.file.SimpleDirectory
-import com.github.asforest.file.SimpleFile
-import com.github.asforest.file.SimpleFileObject
+import com.github.asforest.data.FileObj
+import com.github.asforest.data.SimpleDirectory
+import com.github.asforest.data.SimpleFile
+import com.github.asforest.data.SimpleFileObject
+import com.github.asforest.patch.AndroidPatch
 import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 
 typealias OnScanCallback = (file: FileObj) -> Unit
 
-abstract class WorkmodeBase
+/**
+ * 文件差异计算器的基本类
+ *
+ * 间接匹配：仅出现在目录上，表示目录本身不需要更新，但目录存在有需要更新的文件
+ * 直接匹配：表示当前文件需要更新，或者当前目录下的所有文件都需要更新
+ *
+ * @param local 要比较的本地文件
+ * @param remote 要比较的远程文件
+ */
+abstract class DiffCalculatorBase(val local: FileObj, val remote: List<SimpleFileObject>, var opt: Options)
 {
-    val regexes: List<String>
-    val base: FileObj
-    val local: FileObj
-    val remote: Array<SimpleFileObject>
+    val base = local
     val result: Difference = Difference()
-    var opt: Options
-
-    /**
-     * @param regexes 要比较的路径
-     * @param local 要比较的本地文件
-     * @param remote 要比较的远程文件
-     */
-    constructor(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, opt: Options)
-    {
-        this.regexes = regexes
-        this.base = local
-        this.local = local
-        this.remote = remote
-        this.opt = opt
-    }
 
     /**
      * 将一个文件文件或者目录标记为旧文件
@@ -77,12 +69,13 @@ abstract class WorkmodeBase
         if("\\" in path)
             throw RuntimeException("Not uniform separator style: $path")
 
-        if(regexes.isEmpty())
+        if(opt.patterns.isEmpty())
             return false
 
         var result = false
-        for (reg in regexes)
+        for (reg in opt.patterns)
         {
+            // 以@打头的就是正则表达式，反之是Glob表达式
             val plain = !reg.startsWith("@")
             val regx = if(plain) reg else reg.substring(1)
             result = result || if(plain) {
@@ -95,6 +88,9 @@ abstract class WorkmodeBase
         return result
     }
 
+    /**
+     * 对比文件差异
+     */
     protected abstract fun compare(onScan: OnScanCallback?)
 
     operator fun invoke(onScan: OnScanCallback? =null): Difference
@@ -103,6 +99,9 @@ abstract class WorkmodeBase
         return result
     }
 
+    /**
+     * 计算出来的文件差异结果
+     */
     class Difference (
         val oldFolders: MutableList<String> = mutableListOf(),
         val oldFiles: MutableList<String> = mutableListOf(),
@@ -118,8 +117,24 @@ abstract class WorkmodeBase
         }
     }
 
+    /**
+     * 工作模式的选项参数
+     */
     data class Options(
-        val androidPatch: Map<String, Pair<Long, Long>>,
-        val checkModified: Boolean
+        /**
+         * 路径匹配样式，此选项决定了哪些文件要更新，哪些被忽略。
+         * 此选项可以包含Glob表达式，也可以包含正则表达式
+         */
+        val patterns: List<String>,
+
+        /**
+         * 针对安卓系统的文件修改时间补丁
+         */
+        val androidPatch: AndroidPatch,
+
+        /**
+         * 是否检测文件修改时间，而不是每次都完整检查文件校验，此选项可以节省时间
+         */
+        val checkModified: Boolean,
     )
 }

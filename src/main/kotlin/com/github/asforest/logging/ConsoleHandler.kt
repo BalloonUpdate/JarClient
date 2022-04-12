@@ -8,6 +8,13 @@ class ConsoleHandler(logsys: LogSys, var logLevel: LogSys.LogLevel) : AbstractHa
 
     override fun onMessage(message: Message)
     {
+        if (!message.newLine)
+        {
+            print(message.message)
+            System.out.flush()
+            return
+        }
+
         val tag = if (message.tag != "") "[${message.tag}] " else ""
         val rangedTags = message.rangedTags.joinToString("/").run { if (isNotEmpty()) "[$this] " else "" }
         val prefix = String.format("%s%s", rangedTags, tag)

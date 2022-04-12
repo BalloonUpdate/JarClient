@@ -1,4 +1,4 @@
-package com.github.asforest.window
+package com.github.asforest.gui
 
 import javax.swing.*
 

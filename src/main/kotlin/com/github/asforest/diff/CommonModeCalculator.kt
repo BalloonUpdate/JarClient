@@ -1,10 +1,10 @@
-package com.github.asforest.workmode
+package com.github.asforest.diff
 
 import com.github.asforest.logging.LogSys
-import com.github.asforest.file.FileObj
-import com.github.asforest.file.SimpleDirectory
-import com.github.asforest.file.SimpleFile
-import com.github.asforest.file.SimpleFileObject
+import com.github.asforest.data.FileObj
+import com.github.asforest.data.SimpleDirectory
+import com.github.asforest.data.SimpleFile
+import com.github.asforest.data.SimpleFileObject
 
 /**
  * 默认同步指定文件夹内的所有文件，
@@ -12,10 +12,10 @@ import com.github.asforest.file.SimpleFileObject
  * 不匹配的文件会被忽略掉(不做任何变动)
  * 匹配的文件会与服务器进行同步
  */
-class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, opt: Options)
-    : WorkmodeBase(regexes, local, remote, opt)
+class CommonModeCalculator(local: FileObj, remote: List<SimpleFileObject>, opt: Options)
+    : DiffCalculatorBase(local, remote, opt)
 {
-    override fun compare(onScan: ((file: FileObj) -> Unit)?)
+    override fun compare(onScan: OnScanCallback?)
     {
         findOutNews(local, remote, base, onScan)
         LogSys.debug("-------------------")
@@ -26,11 +26,11 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
      * @param local 要拿来进行对比的本地目录
      * @param remote 要拿来进行对比的远程目录
      * @param base 基准目录，用于计算相对路径（一般等于local）
-     * @param onScan 扫描回调，用于报告md5的计算进度
+     * @param onScan 扫描回调，用于报告计算进度
      */
     private fun findOutNews(
         local: FileObj,
-        remote: Array<SimpleFileObject>,
+        remote: List<SimpleFileObject>,
         base: FileObj,
         onScan: OnScanCallback?,
         indent: String = ""
@@ -64,34 +64,7 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
                 } else if(r is SimpleFile) { // 远程文件是一个文件
                     if(l.isFile) // 本地文件和远程文件都是文件，则对比校验
                     {
-                        var isUpdateToDate = false
-
-                        if(opt.checkModified)
-                        {
-                            isUpdateToDate = if (opt.androidPatch.isNotEmpty()) {
-                                val rpath = l.relativizedBy(base)
-                                opt.androidPatch[rpath]?.run {
-                                    l.modified == first && r.modified == second
-                                } ?: false
-                            } else {
-                                l.modified == r.modified
-                            }
-                        }
-
-                        if(!isUpdateToDate)
-                        {
-                            val lsha1 = l.sha1
-                            if(lsha1 != r.hash)
-                            {
-                                LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
-                                markAsOld(l)
-                                markAsNew(r, l)
-                            } else if (opt.checkModified && r.modified != -1L) {
-                                // 更新修改时间
-                                if (opt.androidPatch.isEmpty())
-                                    l._file.setLastModified(r.modified * 1000)
-                            }
-                        }
+                        compareSingleFile(l, r, indent)
                     } else { // 本地文件是一个目录
                         markAsOld(l)
                         markAsNew(r, l)
@@ -104,30 +77,55 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
         }
     }
 
+    /**
+     * 对比两个路径相同的文件是否一致
+     */
+    private fun compareSingleFile(l: FileObj, r: SimpleFile, indent: String)
+    {
+        var isUpToDate = false
+
+        if(opt.checkModified)
+        {
+            isUpToDate = if (opt.androidPatch.isActive) {
+                val rpath = l.relativizedBy(base)
+                opt.androidPatch[rpath]?.run { l.modified == first && r.modified == second } ?: false
+            } else {
+                l.modified == r.modified
+            }
+        }
+
+        if(!isUpToDate)
+        {
+            val lsha1 = l.sha1
+            if(lsha1 != r.hash)
+            {
+                LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
+                markAsOld(l)
+                markAsNew(r, l)
+            } else if (opt.checkModified && r.modified != -1L) {
+                // 更新修改时间
+                if (!opt.androidPatch.isActive)
+                    l.file.setLastModified(r.modified * 1000)
+            }
+        }
+    }
+
     /** 扫描需要删除的文件
      * @param local 要拿来进行对比的本地目录
      * @param remote 要拿来进行对比的远程目录
      * @param base 基准目录，用于计算相对路径（一般等于local）
-     * @param onScan 扫描回调，用于报告md5的计算进度
+     * @param onScan 扫描回调，用于报告计算进度
      */
     private fun findOutOlds(
         local: FileObj,
-        remote: Array<SimpleFileObject>,
+        remote: List<SimpleFileObject>,
         base: FileObj,
         onScan: OnScanCallback?,
         indent: String =""
     ) {
-        fun get(name: String, list: Array<SimpleFileObject>): SimpleFileObject?
-        {
-            for (n in list)
-                if(n.name == name)
-                    return n
-            return null
-        }
-
         for (l in local.files)
         {
-            val r = get(l.name, remote) // 获取对应远程文件，可能会返回None
+            val r = remote.firstOrNull { it.name == l.name } // 尝试获取对应远程文件
             val direct = test(l.relativizedBy(base)) // direct=true时, indirect必定为true
             val indirect = checkIndirectMatches(l, local.relativizedBy(base), indent)
 
@@ -153,6 +151,9 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
         }
     }
 
+    /**
+     * 检查file是否满足间接匹配条件
+     */
     private fun checkIndirectMatches(file: FileObj, parent: String, indent: String =""): Boolean
     {
         val parent1 = if(parent == "." || parent == "./") "" else parent
@@ -169,6 +170,9 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
         return result
     }
 
+    /**
+     * 检查file是否满足间接匹配条件
+     */
     private fun checkIndirectMatches(file: SimpleFileObject, parent: String, indent: String =""): Boolean
     {
         val parent1 = if(parent == "." || parent == "./") "" else parent
@@ -184,5 +188,4 @@ class CommonMode(regexes: List<String>, local: FileObj, remote: Array<SimpleFile
         }
         return result
     }
-
 }

@@ -8,34 +8,37 @@ object LogSys
 
     val rangedTags = LinkedList<String>()
 
-    fun debug(message: String) = message(LogLevel.DEBUG, "", message)
+    fun debug(message: String, newLine: Boolean = true) = message(LogLevel.DEBUG, "", message, newLine)
 
-    fun info(message: String) = message(LogLevel.INFO, "", message)
+    fun info(message: String, newLine: Boolean = true) = message(LogLevel.INFO, "", message, newLine)
 
-    fun warn(message: String) = message(LogLevel.WARN, "", message)
+    fun warn(message: String, newLine: Boolean = true) = message(LogLevel.WARN, "", message, newLine)
 
-    fun error(message: String) = message(LogLevel.ERROR, "", message)
+    fun error(message: String, newLine: Boolean = true) = message(LogLevel.ERROR, "", message, newLine)
 
-    fun debug(tag: String, message: String) = message(LogLevel.DEBUG, tag, message)
+    fun debug(tag: String, message: String, newLine: Boolean = true) = message(LogLevel.DEBUG, tag, message, newLine)
 
-    fun info(tag: String, message: String) = message(LogLevel.INFO, tag, message)
+    fun info(tag: String, message: String, newLine: Boolean = true) = message(LogLevel.INFO, tag, message, newLine)
 
-    fun warn(tag: String, message: String) = message(LogLevel.WARN, tag, message)
+    fun warn(tag: String, message: String, newLine: Boolean = true) = message(LogLevel.WARN, tag, message, newLine)
 
-    fun error(tag: String, message: String) = message(LogLevel.ERROR, tag, message)
+    fun error(tag: String, message: String, newLine: Boolean = true) = message(LogLevel.ERROR, tag, message, newLine)
 
-    fun message(level: LogLevel, tag: String, message: String)
+    fun message(level: LogLevel, tag: String, message: String, newLine: Boolean)
     {
         for (h in handlers)
             if(level.ordinal >= h.filter.ordinal)
-                h.onMessage(Message(
+                h.onMessage(
+                    Message(
                     time = System.currentTimeMillis(),
                     level = level,
                     tag = tag,
                     message = message,
                     newLineIndent = false,
-                    rangedTags
-                ))
+                    rangedTags = rangedTags,
+                    newLine = newLine,
+                )
+                )
     }
 
     fun openRangedTag(tag: String)

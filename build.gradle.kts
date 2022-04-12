@@ -29,7 +29,6 @@ dependencies {
     implementation("com.hrakaroo:glob:0.9.0")
 }
 
-
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
@@ -47,11 +46,6 @@ tasks.withType<ShadowJar> {
         attributes("Compile-Time" to timestamp)
         attributes("Compile-Time-Ms" to System.currentTimeMillis())
         attributes("Premain-Class" to "com.github.asforest.JavaAgentMain")
-    }
-
-    for (dir in sourceSets.main.get().allSource.sourceDirectories)
-    {
-        from(dir) { into("project-sources/${dir.name}") }
     }
 
     destinationDirectory.set(File(project.buildDir, "production"))

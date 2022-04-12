@@ -1,8 +1,8 @@
 //@file:JvmName("Utils")
 package com.github.asforest.util
 
+import com.github.asforest.data.FileObj
 import com.github.asforest.exception.ManifestNotReadableException
-import com.github.asforest.file.FileObj
 import java.net.URLDecoder
 import java.util.jar.Attributes
 import java.util.jar.JarFile
@@ -45,7 +45,7 @@ object EnvUtil
 
     val originManifest: Attributes
         get() {
-        if(!EnvUtil.isPackaged)
+        if(!isPackaged)
             throw ManifestNotReadableException("This plugin has not been packaged yet")
 
         JarFile(jarFile.path).use { jar ->

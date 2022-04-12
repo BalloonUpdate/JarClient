@@ -1,4 +1,4 @@
-package com.github.asforest.file
+package com.github.asforest.data
 
 import java.io.File
 import java.io.FileInputStream
@@ -10,32 +10,35 @@ import kotlin.io.path.pathString
 
 class FileObj
 {
-    private var file: File
+    private val _file: File
 
-    constructor(file: String): this(File(file))
+    constructor(file: String)
+    {
+        this._file = File(file)
+    }
 
     constructor(file: File)
     {
-        this.file = file.absoluteFile
+        this._file = file.absoluteFile
     }
 
-    val _file: File get() = file
+    val file: File get() = _file
 
-    val name: String get() = file.name
+    val name: String get() = _file.name
 
-    val isDirectory: Boolean get() = file.isDirectory
+    val isDirectory: Boolean get() = _file.isDirectory
 
-    val isFile: Boolean get() = file.isFile
+    val isFile: Boolean get() = _file.isFile
 
-    val exists: Boolean get() = file.exists()
+    val exists: Boolean get() = _file.exists()
 
-    val parent: FileObj get() = FileObj(file.parent)
+    val parent: FileObj get() = FileObj(_file.parent)
 
-    fun mkdirs() = file.mkdirs()
+    fun mkdirs() = _file.mkdirs()
 
     fun makeParentDirs() = parent.mkdirs()
 
-    fun rename(newName: String) = file.renameTo(File(newName))
+    fun rename(newName: String) = _file.renameTo(File(newName))
 
     fun touch(fileContent: String? =null)
     {
@@ -46,14 +49,14 @@ class FileObj
         get() {
             if(!exists)
                 throw FileNotFoundException(path)
-            FileInputStream(file).use {
+            FileInputStream(_file).use {
                 return it.readBytes().decodeToString()
             }
         }
         set(value) {
             if(!exists)
-                file.createNewFile()
-            FileOutputStream(file).use {
+                _file.createNewFile()
+            FileOutputStream(_file).use {
                 it.write(value.encodeToByteArray())
             }
         }
@@ -61,8 +64,8 @@ class FileObj
     fun append(content: String)
     {
         if(!exists)
-            file.createNewFile()
-        FileOutputStream(file, true).use {
+            _file.createNewFile()
+        FileOutputStream(_file, true).use {
             it.write(content.encodeToByteArray())
         }
     }
@@ -73,7 +76,7 @@ class FileObj
                 throw FileNotFoundException(path)
             if(isDirectory)
                 throw FileNotFoundException("is not a file: $path")
-            return file.length()
+            return _file.length()
         }
 
     val modified: Long
@@ -82,10 +85,10 @@ class FileObj
                 throw FileNotFoundException(path)
             if(isDirectory)
                 throw FileNotFoundException("is not a file: $path")
-            return file.lastModified()
+            return _file.lastModified()
         }
 
-    val files: List<FileObj> get() = file.listFiles().map { FileObj(it) }
+    val files: List<FileObj> get() = _file.listFiles().map { FileObj(it) }
 
     val isDirty: Boolean
         get() {
@@ -112,12 +115,12 @@ class FileObj
         if(isDirectory)
             for (f in files)
                 f.delete()
-        file.delete()
+        _file.delete()
     }
 
     fun copy(target: FileObj)
     {
-        file.copyRecursively(target.file, overwrite = true)
+        _file.copyRecursively(target._file, overwrite = true)
     }
 
     fun move(target: FileObj)
@@ -128,7 +131,7 @@ class FileObj
 
     val path: String get() = platformPath.replace("\\", "/")
 
-    val platformPath: String get() = file.absolutePath
+    val platformPath: String get() = _file.absolutePath
 
     fun relativize(target: FileObj, platformize: Boolean = false): String {
         return Paths.get(path).relativize(Paths.get(target.path)).pathString.run {
@@ -189,7 +192,7 @@ class FileObj
         }
 
         val md = MessageDigest.getInstance(method)
-        FileInputStream(file).use {
+        FileInputStream(_file).use {
             var len = 0
             val buf = ByteArray(bufferLen(length))
             while (it.read(buf).also { len = it } != -1)

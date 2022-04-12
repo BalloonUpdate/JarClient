@@ -1,6 +1,5 @@
 package com.github.asforest.util
-
-import com.github.asforest.file.FileObj
+import com.github.asforest.data.FileObj
 import java.lang.ClassCastException
 import java.security.MessageDigest
 

@@ -1,8 +1,8 @@
 package com.github.asforest.util
 
+import com.github.asforest.data.FileObj
 import com.github.asforest.exception.ConnectionClosedException
 import com.github.asforest.exception.HttpRequestFailException
-import com.github.asforest.file.FileObj
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.FileOutputStream
@@ -94,7 +94,7 @@ object HttpUtil
                 }
             }
 
-            file._file.setLastModified(modifed * 1000)
+            file.file.setLastModified(modifed * 1000)
         } catch (e: ConnectException) {
             throw ConnectionClosedException("无法连接到服务器(通常是网络原因或者配置不正确)")
         } catch (e: SocketException) {

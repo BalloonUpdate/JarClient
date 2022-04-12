@@ -1,12 +1,12 @@
-package com.github.asforest.file
+package com.github.asforest.data
 
 abstract class SimpleFileObject(var name: String)
 
 class SimpleDirectory: SimpleFileObject
 {
-    var files: Array<SimpleFileObject>
+    var files: List<SimpleFileObject>
 
-    constructor(name: String, files: Array<SimpleFileObject>) : super(name)
+    constructor(name: String, files: List<SimpleFileObject>) : super(name)
     {
         this.files = files
     }

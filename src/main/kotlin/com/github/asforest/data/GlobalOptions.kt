@@ -2,7 +2,7 @@ package com.github.asforest.data
 
 import com.github.asforest.exception.ConfigFileException
 
-data class Options (
+data class GlobalOptions (
     val server: String,
     val autoExit: Boolean,
     val basePath: String,
@@ -10,19 +10,21 @@ data class Options (
     val noCache: String?,
     val checkModified: Boolean,
     val androidPatch: String?,
+    val noThrowing: Boolean
 ) {
     companion object {
         @JvmStatic
-        fun CreateFromMap(map: Map<String, Any>): Options
+        fun CreateFromMap(map: Map<String, Any>): GlobalOptions
         {
-            return Options(
+            return GlobalOptions(
                 server = getOption<String>(map, "server") ?: throw ConfigFileException("配置文件中的server选项无效"),
                 autoExit = getOption<Boolean>(map, "auto-exit") ?: false,
                 basePath = getOption<String>(map, "base-path") ?: "",
                 versionCache = getOption<String>(map, "version-cache") ?: "",
                 noCache = getOption<String>(map, "no-cache"),
                 checkModified = getOption<Boolean>(map, "check-modified") ?: false,
-                androidPatch = getOption<String>(map, "android-patch")
+                androidPatch = getOption<String>(map, "android-patch"),
+                noThrowing = getOption<Boolean>(map, "no-throwing") ?: false,
             )
         }
 

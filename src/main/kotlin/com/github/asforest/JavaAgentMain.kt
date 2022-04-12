@@ -1,18 +1,16 @@
 package com.github.asforest
 
-import com.github.asforest.file.FileObj
-import com.github.asforest.file.SimpleDirectory
-import com.github.asforest.file.SimpleFile
+import com.github.asforest.data.FileObj
 import com.github.asforest.logging.ConsoleHandler
 import com.github.asforest.logging.FileHandler
 import com.github.asforest.logging.LogSys
 import com.github.asforest.util.EnvUtil
 import com.github.asforest.util.HttpUtil
 import com.github.asforest.util.Utils
-import com.github.asforest.workmode.WorkmodeBase
-import com.github.asforest.workmode.CommonMode
-import com.github.asforest.workmode.OnceMode
-import org.json.JSONObject
+import com.github.asforest.diff.DiffCalculatorBase
+import com.github.asforest.diff.CommonModeCalculator
+import com.github.asforest.diff.OnceModeCalculator
+import com.github.asforest.patch.AndroidPatch
 import java.awt.Desktop
 import java.lang.instrument.Instrumentation
 
@@ -38,26 +36,14 @@ class JavaAgentMain : ClientBase()
         val rawData = HttpUtil.httpFetch(client, indexResponse.updateUrl, options.noCache)
         val updateInfo = parseAsJsonArray(rawData)
 
-        // 安卓补丁
+        // 读取安卓补丁内容
         val patchFile = if (options.checkModified && options.androidPatch != null) progDir + options.androidPatch else null
-        val patchContent = mutableMapOf<String, Pair<Long, Long>>()
-
-        if (patchFile != null)
-        {
-            // 读取
-            if (patchFile.exists)
-            {
-                val json = JSONObject(patchFile.content)
-                for (key in json.keys())
-                {
-                    val value = json.getString(key)
-                    val sp = value.split(":")
-                    patchContent[key] = Pair(sp[0].toLong(), sp[1].toLong())
-                }
-            }
-
-            LogSys.info("读取到${patchContent.size}条补丁规则")
-        }
+        val androidPatch = AndroidPatch(patchFile)
+        val loaded = androidPatch.load()
+        if (loaded == null)
+            LogSys.info("没有找到补丁数据")
+        else
+            LogSys.info("读取到 $loaded 条补丁数据")
 
         // 使用版本缓存
         var isVersionOutdate = true
@@ -77,35 +63,35 @@ class JavaAgentMain : ClientBase()
 
         LogSys.info("正在计算文件差异...")
         // 计算文件差异
-        var diff = WorkmodeBase.Difference()
+        val remoteFiles = unserializeFileStructure(updateInfo)
+        var diff = DiffCalculatorBase.Difference()
 
         if(isVersionOutdate)
         {
             // 对比文件差异
             val targetDirectory = updateDir
-            val remoteFiles = unserializeFileStructure(updateInfo)
 
             // 文件对比进度
-//            val fileCount = Utils.countFiles(targetDirectory)
             var scannedCount = 0
 
-            val opt = WorkmodeBase.Options(
+            val opt = DiffCalculatorBase.Options(
+                patterns = indexResponse.commonMode,
                 checkModified = options.checkModified,
-                androidPatch = patchContent,
+                androidPatch = androidPatch,
             )
 
             // 开始文件对比过程
             LogSys.openRangedTag("普通对比")
-            diff = CommonMode(indexResponse.common_mode.asList(), targetDirectory, remoteFiles, opt)() {
+            diff = CommonModeCalculator(targetDirectory, remoteFiles, opt)() {
                 scannedCount += 1
-                print(".")
+                LogSys.info(".", newLine = false)
             }
-            println()
+            LogSys.info("\n", newLine = false)
 
             LogSys.closeRangedTag()
 
             LogSys.openRangedTag("补全对比")
-            diff += OnceMode(indexResponse.once_mode.asList(), targetDirectory, remoteFiles, opt)()
+            diff += OnceModeCalculator(targetDirectory, remoteFiles, opt)()
             LogSys.closeRangedTag()
 
             // 输出差异信息
@@ -121,10 +107,7 @@ class JavaAgentMain : ClientBase()
             diff.newFolders.map { (targetDirectory + it) }.forEach { it.mkdirs() }
 
             // 下载新文件
-            var totalBytes: Long = 0
-            var totalBytesDownloaded: Long = 0
             var downloadedCount = 0
-            diff.newFiles.values.forEach { totalBytes += it.first }
 
             // 开始下载
             for ((relativePath, lm) in diff.newFiles)
@@ -135,36 +118,24 @@ class JavaAgentMain : ClientBase()
                 val lengthExpected = lm.first
                 val midifed = lm.second
 
-                LogSys.info("正在下载: ${file.name} (${downloadedCount + 1}/${diff.newFiles.values.size})")
+                LogSys.info("下载(${downloadedCount + 1}/${diff.newFiles.values.size}): ${file.name}")
                 LogSys.debug("发起请求: ${url}, 写入文件: ${file.path}")
 
-                HttpUtil.httpDownload(client, url, file, lengthExpected, midifed, options.noCache) { packageLength, received, total -> }
+                HttpUtil.httpDownload(client, url, file, lengthExpected, midifed, options.noCache) { _, _, _ -> }
 
                 downloadedCount += 1
             }
         }
 
+        // 更新版本缓存文件
         if(options.versionCache.isNotEmpty())
             versionFile.content = Utils.sha1(rawData)
 
-        // 安卓补丁
-        if (patchFile != null)
-        {
-            val rFiles = SimpleDirectory("", unserializeFileStructure(updateInfo))
-            val ff = mutableMapOf<String, String>()
-            Utils.walkFile(updateDir, updateDir) { file, path ->
-                var temp: SimpleDirectory = rFiles
-                val sp = path.split("/")
-                for (s in sp.subList(0, sp.size - 1))
-                    temp = (temp[s] ?: return@walkFile) as SimpleDirectory
-                val remote = (temp[sp.last()] ?: return@walkFile) as SimpleFile
+        // 更新安卓补丁内容
+        if (androidPatch.isActive)
+            androidPatch.update(updateDir, remoteFiles)
 
-                ff[path] = "${file.modified}:${remote.modified}"
-            }
-
-            patchFile.content = JSONObject(ff).toString(4)
-        }
-
+        // 显示更新小节
         val totalUpdated = diff.newFiles.size + diff.oldFiles.size
         if (totalUpdated == 0)
             LogSys.info("所有文件已是最新！")

@@ -1,10 +1,10 @@
-package com.github.asforest.workmode
+package com.github.asforest.diff
 
 import com.github.asforest.logging.LogSys
-import com.github.asforest.file.FileObj
-import com.github.asforest.file.SimpleDirectory
-import com.github.asforest.file.SimpleFile
-import com.github.asforest.file.SimpleFileObject
+import com.github.asforest.data.FileObj
+import com.github.asforest.data.SimpleDirectory
+import com.github.asforest.data.SimpleFile
+import com.github.asforest.data.SimpleFileObject
 
 /**
  * 仅下载不存在的文件，如果文件存在，会直接跳过，不会做任何变动
@@ -14,10 +14,10 @@ import com.github.asforest.file.SimpleFileObject
  * 之后除非这个文件夹被删除，否则不会再进行下载任何相关文件
  * 顺便，此模式也不具有创建空文件夹的功能
  */
-class OnceMode (regexes: List<String>, local: FileObj, remote: Array<SimpleFileObject>, opt: Options)
-    : WorkmodeBase(regexes, local, remote, opt)
+class OnceModeCalculator (local: FileObj, remote: List<SimpleFileObject>, opt: Options)
+    : DiffCalculatorBase(local, remote, opt)
 {
-    override fun compare(onScan: ((file: FileObj) -> Unit)?)
+    override fun compare(onScan: OnScanCallback?)
     {
         findOutNews(local, remote, base, onScan)
     }
@@ -26,11 +26,11 @@ class OnceMode (regexes: List<String>, local: FileObj, remote: Array<SimpleFileO
      * @param local 要拿来进行对比的本地目录
      * @param remote 要拿来进行对比的远程目录
      * @param base 基准目录，用于计算相对路径（一般等于local）
-     * @param onScan 扫描回调，用于报告md5的计算进度
+     * @param onScan 扫描回调，用于报告计算进度
      */
     private fun findOutNews(
         local: FileObj,
-        remote: Array<SimpleFileObject>,
+        remote: List<SimpleFileObject>,
         base: FileObj,
         onScan: OnScanCallback?,
         indent: String =""
@@ -61,6 +61,9 @@ class OnceMode (regexes: List<String>, local: FileObj, remote: Array<SimpleFileO
         }
     }
 
+    /**
+     * 检查file是否满足间接匹配条件
+     */
     private fun checkIndirectMatches(file: SimpleFileObject, parent: String, indent: String =""): Boolean
     {
         val parent1 = if(parent == "." || parent == "./") "" else parent
@@ -76,6 +79,4 @@ class OnceMode (regexes: List<String>, local: FileObj, remote: Array<SimpleFileO
         }
         return result
     }
-
-
 }

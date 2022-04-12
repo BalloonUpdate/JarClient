@@ -1,14 +1,14 @@
 package com.github.asforest
 
 import com.github.asforest.data.IndexResponse
-import com.github.asforest.data.Options
+import com.github.asforest.data.GlobalOptions
 import com.github.asforest.exception.ConfigFileNotFoundException
 import com.github.asforest.exception.UnableToDecodeException
 import com.github.asforest.exception.UpdateDirNotFoundException
-import com.github.asforest.file.FileObj
-import com.github.asforest.file.SimpleDirectory
-import com.github.asforest.file.SimpleFile
-import com.github.asforest.file.SimpleFileObject
+import com.github.asforest.data.FileObj
+import com.github.asforest.data.SimpleDirectory
+import com.github.asforest.data.SimpleFile
+import com.github.asforest.data.SimpleFileObject
 import com.github.asforest.util.EnvUtil
 import com.github.asforest.util.HttpUtil
 import com.github.asforest.util.Utils
@@ -39,7 +39,7 @@ open class ClientBase
     /**
      * 配置文件对象
      */
-    val options = Options.CreateFromMap(readConfig(progDir + "config.yml"))
+    val options = GlobalOptions.CreateFromMap(readConfig(progDir + "config.yml"))
 
     /**
      * 更新目录（更新目录指从哪个目录起始，更新所有子目录）
@@ -91,7 +91,7 @@ open class ClientBase
     /**
      * 将服务器返回的文件结构信息反序列化成SimpleFileObject对象便于使用
      */
-    fun unserializeFileStructure(raw: JSONArray): Array<SimpleFileObject>
+    fun unserializeFileStructure(raw: JSONArray): List<SimpleFileObject>
     {
         val res = ArrayList<SimpleFileObject>()
         for (ff in raw)
@@ -109,7 +109,7 @@ open class ClientBase
                 res += SimpleFile(name, length.toLong(), hash, modified.toLong())
             }
         }
-        return res.toTypedArray()
+        return res
     }
 
     /**
@@ -141,8 +141,8 @@ open class ClientBase
         }
 
         return IndexResponse().apply {
-            common_mode = (resp["common_mode"] as JSONArray).map { it as String }.toTypedArray()
-            once_mode = (resp["once_mode"]  as JSONArray).map { it as String }.toTypedArray()
+            commonMode = (resp["common_mode"] as JSONArray).map { it as String }
+            onceMode = (resp["once_mode"]  as JSONArray).map { it as String }
             updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.json"
             updateSource = baseurl + findSource(update, update) + "/"
         }

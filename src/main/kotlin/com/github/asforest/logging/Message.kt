@@ -6,5 +6,6 @@ data class Message(
     val tag: String,
     val message: String,
     val newLineIndent: Boolean,
-    val rangedTags: List<String>
+    val rangedTags: List<String>,
+    val newLine: Boolean,
 )
