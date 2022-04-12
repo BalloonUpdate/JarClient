@@ -154,9 +154,11 @@ class JavaAgentMain : ClientBase()
                 return
             }
 
+            val am = JavaAgentMain()
+
             try {
                 val logFile = if (EnvUtil.isPackaged) EnvUtil.jarFile.parent + "updater.log" else FileObj(System.getProperty("user.dir")) + "updater.log"
-                val am = JavaAgentMain()
+
                 LogSys.addHandler(FileHandler(LogSys, logFile))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.INFO))
                 LogSys.openRangedTag("更新助手")
@@ -171,7 +173,12 @@ class JavaAgentMain : ClientBase()
                     println(e.stackTraceToString())
                 }
 
-                throw e
+                if (am.options.noThrowing)
+                {
+                    println("文件更新失败！但因为设置了no-throwing参数，游戏仍会继续运行！\n\n\n")
+                } else {
+                    throw e
+                }
             }
         }
     }
