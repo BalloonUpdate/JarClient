@@ -15,7 +15,6 @@ import com.github.balloonupdate.util.EnvUtil
 import com.github.balloonupdate.util.Utils
 import java.lang.Exception
 import javax.swing.JOptionPane
-import kotlin.system.exitProcess
 
 class GraphicsMain : ClientBase()
 {
@@ -203,11 +202,11 @@ class GraphicsMain : ClientBase()
         @JvmStatic
         fun main(args: Array<String>)
         {
-            main(false)
+            main()
         }
 
         @JvmStatic
-        fun main(isJavaAgentMode: Boolean)
+        fun main()
         {
             try {
                 LogSys.addHandler(FileHandler(LogSys, progDir + "balloon_update.log"))
@@ -235,10 +234,15 @@ class GraphicsMain : ClientBase()
                     DialogUtil.error(e.getDisplayName() + " ${ins.appVersion}", e.message ?: "")
                 }
 
+                if (ins.options.noThrowing)
+                {
+                    println("文件更新失败！但因为设置了no-throwing参数，游戏仍会继续运行！\n\n\n")
+                } else {
+                    throw e
+                }
+            } finally {
+                ins.window.close()
                 LogSys.destory()
-
-                if (!isJavaAgentMode)
-                    exitProcess(1)
             }
         }
     }

@@ -149,9 +149,9 @@ class JavaAgentMain : ClientBase()
         @JvmStatic
         fun premain(agentArgs: String?, ins: Instrumentation)
         {
-            if (Desktop.isDesktopSupported() && agentArgs != "force-agent")
+            if (Desktop.isDesktopSupported() && agentArgs != "windowless")
             {
-                GraphicsMain.main(true)
+                GraphicsMain.main()
                 return
             }
 
@@ -178,9 +178,9 @@ class JavaAgentMain : ClientBase()
                 } else {
                     throw e
                 }
+            } finally {
+                LogSys.destory()
             }
-
-            LogSys.destory()
         }
     }
 }
