@@ -9,7 +9,7 @@ val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
 val debugVersion: String get() = System.getenv("DBG_VERSION") ?: "0.0.0"
 
-group = "com.github.fireworkupdate"
+group = "com.github.balloonupdate"
 version = gitTagName?.run { getVersionName(this) } ?: debugVersion
 
 plugins {
@@ -45,7 +45,7 @@ tasks.withType<ShadowJar> {
         attributes("Git-Commit" to (gitCommitSha ?: ""))
         attributes("Compile-Time" to timestamp)
         attributes("Compile-Time-Ms" to System.currentTimeMillis())
-        attributes("Premain-Class" to "com.github.fireworkupdate.JavaAgentMain")
+        attributes("Premain-Class" to "com.github.balloonupdate.JavaAgentMain")
     }
 
     destinationDirectory.set(File(project.buildDir, "production"))
