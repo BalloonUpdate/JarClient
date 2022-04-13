@@ -30,13 +30,6 @@ open class ClientBase
     val appVersion by lazy { EnvUtil.version }
 
     /**
-     * 工作目录
-     */
-    val workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
-
-    val progDir = if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir
-
-    /**
      * 配置文件对象
      */
     val options = GlobalOptions.CreateFromMap(readConfig(progDir + "config.yml"))
@@ -193,5 +186,19 @@ open class ClientBase
             return null
         }
         return null
+    }
+
+    companion object {
+        /**
+         * 工作目录
+         */
+        @JvmStatic
+        val workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
+
+        /**
+         * 程序所在目录
+         */
+        @JvmStatic
+        val progDir = if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir
     }
 }

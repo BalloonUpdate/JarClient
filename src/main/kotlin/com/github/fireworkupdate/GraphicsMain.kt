@@ -14,6 +14,7 @@ import com.github.fireworkupdate.diff.CommonModeCalculator
 import com.github.fireworkupdate.diff.OnceModeCalculator
 import com.github.fireworkupdate.util.EnvUtil
 import com.github.fireworkupdate.util.Utils
+import java.io.File
 import java.lang.Exception
 import javax.swing.JOptionPane
 import kotlin.system.exitProcess
@@ -205,8 +206,7 @@ class GraphicsMain : ClientBase()
         fun main(args: Array<String>)
         {
             try {
-                val logFile = if (EnvUtil.isPackaged) EnvUtil.jarFile.parent + "updater.log" else FileObj(System.getProperty("user.dir")) + "updater.log"
-                LogSys.addHandler(FileHandler(LogSys, logFile))
+                LogSys.addHandler(FileHandler(LogSys, progDir + "firework_update.log"))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.DEBUG))
 
                 ins = GraphicsMain()

@@ -159,9 +159,7 @@ class JavaAgentMain : ClientBase()
             val am = JavaAgentMain()
 
             try {
-                val logFile = if (EnvUtil.isPackaged) EnvUtil.jarFile.parent + "updater.log" else FileObj(System.getProperty("user.dir")) + "updater.log"
-
-                LogSys.addHandler(FileHandler(LogSys, logFile))
+                LogSys.addHandler(FileHandler(LogSys, progDir + "firework_update.txt"))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.INFO))
                 LogSys.openRangedTag("更新助手")
                 am.run()
