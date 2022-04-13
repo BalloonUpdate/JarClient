@@ -205,6 +205,12 @@ class GraphicsMain : ClientBase()
         @JvmStatic
         fun main(args: Array<String>)
         {
+            main(false)
+        }
+
+        @JvmStatic
+        fun main(isJavaAgentMode: Boolean)
+        {
             try {
                 LogSys.addHandler(FileHandler(LogSys, progDir + "firework_update.log"))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.DEBUG))
@@ -232,7 +238,9 @@ class GraphicsMain : ClientBase()
                 }
 
                 LogSys.destory()
-                exitProcess(1)
+
+                if (!isJavaAgentMode)
+                    exitProcess(1)
             }
         }
     }

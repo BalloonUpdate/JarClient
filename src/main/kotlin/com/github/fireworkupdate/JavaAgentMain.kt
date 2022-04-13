@@ -152,7 +152,7 @@ class JavaAgentMain : ClientBase()
         {
             if (Desktop.isDesktopSupported() && agentArgs != "force-agent")
             {
-                GraphicsMain.main(arrayOf())
+                GraphicsMain.main(true)
                 return
             }
 
@@ -180,6 +180,8 @@ class JavaAgentMain : ClientBase()
                     throw e
                 }
             }
+
+            LogSys.destory()
         }
     }
 }
