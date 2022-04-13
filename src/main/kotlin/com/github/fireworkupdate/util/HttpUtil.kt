@@ -73,31 +73,41 @@ object HttpUtil
             }
         }
 
-        try {
-            client.newCall(req).execute().use { r ->
-                if(r.isSuccessful)
-                {
-                    r.body!!.byteStream().use { input ->
-                        FileOutputStream(file.path).use { output ->
-                            var bytesReceived: Long = 0
-                            var len = 10
-                            val buffer: ByteArray = ByteArray(bufferLen(lengthExpected))
-                            while (input.read(buffer).also { len = it; bytesReceived += it } != -1)
-                            {
-                                output.write(buffer, 0, len)
-                                onProgress(len.toLong(), bytesReceived, lengthExpected)
+        var ex: Throwable? = null
+        var retries = 5
+        while (--retries >= 0)
+        {
+            try {
+                client.newCall(req).execute().use { r ->
+                    if(r.isSuccessful)
+                    {
+                        r.body!!.byteStream().use { input ->
+                            FileOutputStream(file.path).use { output ->
+                                var bytesReceived: Long = 0
+                                var len = 10
+                                val buffer: ByteArray = ByteArray(bufferLen(lengthExpected))
+                                while (input.read(buffer).also { len = it; bytesReceived += it } != -1)
+                                {
+                                    output.write(buffer, 0, len)
+                                    onProgress(len.toLong(), bytesReceived, lengthExpected)
+                                }
                             }
                         }
+                    } else {
+                        throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url_ with httpcode(${r.code})")
                     }
-                } else {
-                    throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url_ with httpcode(${r.code})")
                 }
+                ex = null
+                break
+            } catch (e: ConnectException) {
+                ex = ConnectionClosedException("无法连接到服务器")
+            } catch (e: SocketException) {
+                ex = ConnectionClosedException("连接中断")
             }
-        } catch (e: ConnectException) {
-            throw ConnectionClosedException("无法连接到服务器(通常是网络原因或者配置不正确)")
-        } catch (e: SocketException) {
-            throw ConnectionClosedException("连接中断(通常是网络原因)")
         }
+
+        if (ex != null)
+            throw ex
     }
 
     fun appendQueryParam(url: String, key: String, value: String): String
