@@ -118,12 +118,13 @@ class JavaAgentMain : ClientBase()
                 val file = targetDirectory + relativePath
 
                 val lengthExpected = lm.first
-                val midifed = lm.second
+                val modified = lm.second
 
                 LogSys.info("下载(${downloadedCount + 1}/${diff.newFiles.values.size}): ${file.name}")
                 LogSys.debug("发起请求: ${url}, 写入文件: ${file.path}")
 
-                HttpUtil.httpDownload(client, url, file, lengthExpected, midifed, options.noCache) { _, _, _ -> }
+                HttpUtil.httpDownload(client, url, file, lengthExpected, options.noCache) { _, _, _ -> }
+                file.file.setLastModified(modified)
 
                 downloadedCount += 1
             }

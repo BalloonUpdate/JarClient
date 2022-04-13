@@ -12,7 +12,6 @@ import com.github.fireworkupdate.gui.MainWin
 import com.github.fireworkupdate.diff.DiffCalculatorBase
 import com.github.fireworkupdate.diff.CommonModeCalculator
 import com.github.fireworkupdate.diff.OnceModeCalculator
-import com.github.fireworkupdate.patch.AndroidPatch
 import com.github.fireworkupdate.util.EnvUtil
 import com.github.fireworkupdate.util.Utils
 import java.lang.Exception
@@ -132,9 +131,9 @@ class GraphicsMain : ClientBase()
                 var bytesDownloaded = 0L    // 初始化时间区段内下载的大小为 0
 
                 val lengthExpected = lm.first
-                val midifed = lm.second
+                val modified = lm.second
 
-                httpDownload(client, url, file, lengthExpected, midifed, options.noCache) { packageLength, received, total ->
+                httpDownload(client, url, file, lengthExpected, options.noCache) { packageLength, received, total ->
                     totalBytesDownloaded += packageLength
                     val currentProgress = received / total.toFloat()*100
                     val totalProgress = totalBytesDownloaded / totalBytes.toFloat()*100
@@ -159,6 +158,7 @@ class GraphicsMain : ClientBase()
                     window.progress2text = "$totalProgressInString%  -  ${downloadedCount + 1}/${diff.newFiles.values.size}"
                     window.titleText = "($totalProgressInString%) 文件更新助手"
                 }
+                file.file.setLastModified(modified)
 
                 downloadedCount += 1
             }

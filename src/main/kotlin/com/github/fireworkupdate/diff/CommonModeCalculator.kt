@@ -105,8 +105,8 @@ class CommonModeCalculator(local: FileObj, remote: List<SimpleFileObject>, opt: 
                 markAsNew(r, l)
             } else if (opt.checkModified && r.modified != -1L) {
                 // 更新修改时间
-                if (opt.androidPatch != null)
-                    l.file.setLastModified(r.modified * 1000)
+//                if (opt.androidPatch == null)
+                l.file.setLastModified(r.modified)
             }
         }
     }

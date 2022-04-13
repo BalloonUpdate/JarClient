@@ -106,7 +106,7 @@ open class ClientBase
                 val length = Utils.parseAsLong(f["length"])
                 val hash = f["hash"] as String
                 val modified = Utils.parseAsLong(f["modified"] ?: -1)
-                res += SimpleFile(name, length.toLong(), hash, modified.toLong())
+                res += SimpleFile(name, length, hash, modified * 1000) // 服务端返回的是秒，这里需要转换成毫秒
             }
         }
         return res
