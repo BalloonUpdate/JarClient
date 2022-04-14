@@ -85,9 +85,9 @@ class JavaAgentMain : ClientBase()
             LogSys.openRangedTag("普通对比")
             diff = CommonModeCalculator(targetDirectory, remoteFiles, opt)() {
                 scannedCount += 1
-                print(".")
+//                print(".")
             }
-            println()
+//            println()
 
             LogSys.closeRangedTag()
 
