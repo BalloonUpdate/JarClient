@@ -34,7 +34,7 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("com.github.fireworkupdate.GraphicsMain")
+    mainClass.set("com.github.balloonupdate.GraphicsMain")
 }
 
 tasks.withType<ShadowJar> {
