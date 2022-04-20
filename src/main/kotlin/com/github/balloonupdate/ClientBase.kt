@@ -14,9 +14,9 @@ import com.github.balloonupdate.util.HttpUtil
 import com.github.balloonupdate.util.Utils
 import okhttp3.OkHttpClient
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import org.yaml.snakeyaml.Yaml
-import org.yaml.snakeyaml.scanner.ScannerException
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.concurrent.TimeUnit
@@ -76,7 +76,7 @@ open class ClientBase
                 content = externalConfigFile.content
             }
             return Yaml().load(content)
-        } catch (e: ScannerException) {
+        } catch (e: JSONException) {
             throw UnableToDecodeException("配置文件无法解码:\n"+e.message)
         }
     }
@@ -145,7 +145,7 @@ open class ClientBase
     {
         try {
             return JSONObject(content)
-        } catch (e: ScannerException) {
+        } catch (e: JSONException) {
             throw UnableToDecodeException("Json无法解码:\n"+e.message)
         }
     }
@@ -154,7 +154,7 @@ open class ClientBase
     {
         try {
             return JSONArray(content)
-        } catch (e: ScannerException) {
+        } catch (e: JSONException) {
             throw UnableToDecodeException("Json无法解码:\n"+e.message)
         }
     }
