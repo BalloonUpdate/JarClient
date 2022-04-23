@@ -8,6 +8,7 @@ import okhttp3.Request
 import java.io.FileOutputStream
 import java.net.ConnectException
 import java.net.SocketException
+import java.net.SocketTimeoutException
 
 object HttpUtil
 {
@@ -33,9 +34,11 @@ object HttpUtil
                 return r.body!!.string()
             }
         } catch (e: ConnectException) {
-            throw ConnectionClosedException("无法连接到更新服务器")
+            throw ConnectionClosedException("无法连接到更新服务器(连接被拒绝)")
         } catch (e: SocketException) {
             throw ConnectionClosedException("连接中断")
+        } catch (e: SocketTimeoutException) {
+            throw ConnectionClosedException("无法连接到更新服务器(连接超时)")
         }
     }
 
