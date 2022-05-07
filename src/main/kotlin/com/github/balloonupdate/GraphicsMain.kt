@@ -224,15 +224,14 @@ class GraphicsMain : ClientBase()
                     System.err.println(e.stackTraceToString())
                 }
 
-                if(e !is BaseException)
-                {
-                    val content = "${e.javaClass.name}\n${e.message}\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
+                val title = "发生错误 ${ins.appVersion}"
 
-                    if(DialogUtil.confirm("发生错误 ${ins.appVersion}", content))
-                        DialogUtil.error("调用堆栈", e.stackTraceToString())
-                } else {
-                    DialogUtil.error(e.getDisplayName() + " ${ins.appVersion}", e.message ?: "")
-                }
+                var content = if(e is BaseException) e.getDisplayName() else e.javaClass.name
+                content += "\n" + Utils.stringBreak((e.message ?: "没有更多异常信息"), 80)
+                content += "\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
+
+                if(DialogUtil.confirm(title, content))
+                    DialogUtil.error("调用堆栈", e.stackTraceToString())
 
                 if (ins.options.noThrowing)
                 {

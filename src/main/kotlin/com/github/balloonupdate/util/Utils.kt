@@ -1,5 +1,7 @@
 package com.github.balloonupdate.util
 import com.github.balloonupdate.data.FileObj
+import com.github.balloonupdate.exception.SecurityReasonException
+import com.github.balloonupdate.logging.LogSys
 import java.lang.ClassCastException
 import java.security.MessageDigest
 
@@ -12,10 +14,40 @@ object Utils
     fun countFiles(directory: FileObj): Int
     {
         var count = 0
-        for (f in directory.files)
+        val files: List<FileObj>
+
+        try {
+            files = directory.files
+        } catch (e: NullPointerException) {
+            throw SecurityReasonException("由于安全机制或者IO错误，无法访问目录: " + directory.path)
+        }
+
+        for (f in files)
             count += if(f.isFile) 1 else countFiles(f)
+
         return count
     }
+
+    /**
+     * 拆分较长的字符串到多行里
+     */
+    @JvmStatic
+    fun stringBreak(str: String, lineLength: Int, newline: String="\n"): String
+    {
+        val lines = mutableListOf<String>()
+
+        val lineCount = str.length / lineLength
+        val remains = str.length % lineLength
+
+        for (i in 0 until lineCount)
+            lines += str.substring(lineLength * i, lineLength * (i + 1))
+
+        if (remains > 0)
+            lines += str.substring(lineLength * lineCount)
+
+        return lines.joinToString(newline)
+    }
+
 
     @JvmStatic
     fun walkFile(directory: FileObj, base: FileObj, callback: (dir: FileObj, path: String) -> Unit)
