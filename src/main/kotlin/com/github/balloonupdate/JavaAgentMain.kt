@@ -9,7 +9,10 @@ import com.github.balloonupdate.util.Utils
 import com.github.balloonupdate.diff.DiffCalculatorBase
 import com.github.balloonupdate.diff.CommonModeCalculator
 import com.github.balloonupdate.diff.OnceModeCalculator
+import com.github.balloonupdate.exception.UnableToDecodeException
 import com.github.balloonupdate.patch.AndroidPatch
+import org.json.JSONArray
+import org.json.JSONException
 import java.awt.Desktop
 import java.lang.instrument.Instrumentation
 
@@ -33,7 +36,12 @@ class JavaAgentMain : ClientBase()
         LogSys.info("等待服务器返回最新文件结构数据")
         LogSys.debug("请求的URL: ${indexResponse.updateUrl}")
         val rawData = HttpUtil.httpFetch(client, indexResponse.updateUrl, options.noCache)
-        val updateInfo = parseAsJsonArray(rawData)
+        val updateInfo: JSONArray
+        try {
+            updateInfo = JSONArray(rawData)
+        } catch (e: JSONException) {
+            throw UnableToDecodeException("Json无法解码(对应URL: ${indexResponse.updateUrl}):\n"+e.message)
+        }
 
         // 读取安卓补丁内容
         val androidPatch = if (options.checkModified && options.androidPatch != null) AndroidPatch(progDir + options.androidPatch) else null

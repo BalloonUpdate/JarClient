@@ -11,8 +11,11 @@ import com.github.balloonupdate.gui.MainWin
 import com.github.balloonupdate.diff.DiffCalculatorBase
 import com.github.balloonupdate.diff.CommonModeCalculator
 import com.github.balloonupdate.diff.OnceModeCalculator
+import com.github.balloonupdate.exception.UnableToDecodeException
 import com.github.balloonupdate.util.EnvUtil
 import com.github.balloonupdate.util.Utils
+import org.json.JSONArray
+import org.json.JSONException
 import java.lang.Exception
 import javax.swing.JOptionPane
 
@@ -44,7 +47,12 @@ class GraphicsMain : ClientBase()
         // 等待服务器返回最新文件结构数据
         window.stateText = "正在获取资源更新..."
         val rawData = httpFetch(client, indexResponse.updateUrl, options.noCache)
-        val updateInfo = parseAsJsonArray(rawData)
+        val updateInfo: JSONArray
+        try {
+            updateInfo = JSONArray(rawData)
+        } catch (e: JSONException) {
+            throw UnableToDecodeException("Json无法解码(对应URL: ${indexResponse.updateUrl}):\n"+e.message)
+        }
 
         // 使用版本缓存
         var isVersionOutdate = true

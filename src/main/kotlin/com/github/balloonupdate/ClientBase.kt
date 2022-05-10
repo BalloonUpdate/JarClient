@@ -111,7 +111,13 @@ open class ClientBase
     fun fetchIndexResponse(client: OkHttpClient, indexUrl: String, noCache: String?): IndexResponse
     {
         val baseurl = indexUrl.substring(0, indexUrl.lastIndexOf('/') + 1)
-        val resp = parseAsJsonObject(HttpUtil.httpFetch(client, indexUrl, noCache))
+        val content = HttpUtil.httpFetch(client, indexUrl, noCache)
+        val resp: JSONObject
+        try {
+            resp = JSONObject(content)
+        } catch (e: JSONException) {
+            throw UnableToDecodeException("Json无法解码(对应URL: $indexUrl):\n"+e.message)
+        }
         val update = resp["update"] as? String ?: "res"
 
         fun findSource(text: String, def: String): String
@@ -138,24 +144,6 @@ open class ClientBase
             onceMode = (resp["once_mode"]  as JSONArray).map { it as String }
             updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.json"
             updateSource = baseurl + findSource(update, update) + "/"
-        }
-    }
-
-    fun parseAsJsonObject(content: String): JSONObject
-    {
-        try {
-            return JSONObject(content)
-        } catch (e: JSONException) {
-            throw UnableToDecodeException("Json无法解码:\n"+e.message)
-        }
-    }
-
-    fun parseAsJsonArray(content: String): JSONArray
-    {
-        try {
-            return JSONArray(content)
-        } catch (e: JSONException) {
-            throw UnableToDecodeException("Json无法解码:\n"+e.message)
         }
     }
 
