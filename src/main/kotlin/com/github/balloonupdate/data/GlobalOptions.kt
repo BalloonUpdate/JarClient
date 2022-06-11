@@ -10,7 +10,8 @@ data class GlobalOptions (
     val noCache: String?,
     val checkModified: Boolean,
     val androidPatch: String?,
-    val noThrowing: Boolean
+    val noThrowing: Boolean,
+    val quietMode: Boolean,
 ) {
     companion object {
         @JvmStatic
@@ -25,6 +26,7 @@ data class GlobalOptions (
                 checkModified = getOption<Boolean>(map, "check-modified") ?: false,
                 androidPatch = getOption<String>(map, "android-patch"),
                 noThrowing = getOption<Boolean>(map, "no-throwing") ?: false,
+                quietMode = getOption<Boolean>(map, "quiet-mode") ?: false,
             )
         }
 

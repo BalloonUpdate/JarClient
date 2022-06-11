@@ -28,6 +28,9 @@ class GraphicsMain : ClientBase()
 
     fun run()
     {
+        if (!options.quietMode)
+            window.show()
+
         // 输出调试信息
         LogSys.openRangedTag("环境")
         LogSys.debug("更新目录: ${updateDir.path}")
@@ -69,6 +72,9 @@ class GraphicsMain : ClientBase()
                 true
             }
         }
+
+        // 下载过的文件数量
+        var downloadFileCount = 0
 
         // 计算文件差异
         var diff = DiffCalculatorBase.Difference()
@@ -112,6 +118,10 @@ class GraphicsMain : ClientBase()
             diff.newFiles.forEach { LogSys.info("新文件: ${it.key}") }
             diff.newFolders.forEach { LogSys.info("新目录: $it") }
             LogSys.closeRangedTag()
+
+            // 延迟打开窗口
+            if (options.quietMode && diff.newFiles.isNotEmpty())
+                window.show()
 
             // 删除旧文件和旧目录，还有创建新目录
             diff.oldFiles.map { (targetDirectory + it) }.forEach { it.delete() }
@@ -167,6 +177,7 @@ class GraphicsMain : ClientBase()
                 file.file.setLastModified(modified)
 
                 downloadedCount += 1
+                downloadFileCount += 1
             }
         }
 
@@ -174,7 +185,7 @@ class GraphicsMain : ClientBase()
             versionFile.content = Utils.sha1(rawData)
 
         // 程序结束
-        if(!options.autoExit)
+        if(!(options.quietMode && downloadFileCount == 0) && !options.autoExit)
         {
             val news = diff.newFiles
             val hasUpdate = news.isEmpty()
@@ -183,7 +194,7 @@ class GraphicsMain : ClientBase()
             JOptionPane.showMessageDialog(null, content, title, JOptionPane.INFORMATION_MESSAGE)
         }
 
-        window.close()
+        window.destroy()
     }
 
     object DialogUtil
@@ -248,7 +259,7 @@ class GraphicsMain : ClientBase()
                     throw e
                 }
             } finally {
-                ins.window.close()
+                ins.window.destroy()
                 LogSys.destory()
             }
         }

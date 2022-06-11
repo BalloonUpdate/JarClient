@@ -20,7 +20,7 @@ class MainWin
 //            isAlwaysOnTop = true
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
             contentPane.layout = null
-            isVisible = true
+            isVisible = false
 //            isResizable = false
             setSize(325, 140)
             setLocationRelativeTo(null)
@@ -82,7 +82,11 @@ class MainWin
         get() = window.title
         set(value) = run { window.title = value + titleTextSuffix }
 
-    fun close() = window.dispose()
+    fun show() = window.run { isVisible = true }
+
+    fun hide() = window.run { isVisible = false }
+
+    fun destroy() = window.dispose()
 
     companion object {
         @JvmStatic

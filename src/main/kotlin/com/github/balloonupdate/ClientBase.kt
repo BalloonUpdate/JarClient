@@ -181,7 +181,12 @@ open class ClientBase
          * 工作目录
          */
         @JvmStatic
-        val workDir = System.getProperty("user.dir").run { FileObj(if(EnvUtil.isPackaged) this else "$this${File.separator}workdir") }
+        val workDir = System.getProperty("user.dir").run {
+           if(EnvUtil.isPackaged)
+               FileObj(this)
+           else
+               FileObj("$this${File.separator}workdir").also { it.mkdirs() }
+        }
 
         /**
          * 程序所在目录
