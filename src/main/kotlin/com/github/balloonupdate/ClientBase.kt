@@ -1,14 +1,9 @@
 package com.github.balloonupdate
 
-import com.github.balloonupdate.data.IndexResponse
-import com.github.balloonupdate.data.GlobalOptions
+import com.github.balloonupdate.data.*
 import com.github.balloonupdate.exception.ConfigFileNotFoundException
 import com.github.balloonupdate.exception.UnableToDecodeException
 import com.github.balloonupdate.exception.UpdateDirNotFoundException
-import com.github.balloonupdate.data.FileObj
-import com.github.balloonupdate.data.SimpleDirectory
-import com.github.balloonupdate.data.SimpleFile
-import com.github.balloonupdate.data.SimpleFileObject
 import com.github.balloonupdate.util.EnvUtil
 import com.github.balloonupdate.util.HttpUtil
 import com.github.balloonupdate.util.Utils
@@ -78,6 +73,28 @@ open class ClientBase
             return Yaml().load(content)
         } catch (e: JSONException) {
             throw UnableToDecodeException("配置文件无法解码:\n"+e.message)
+        }
+    }
+
+    /**
+     * 从Jar文件内读取语言配置文件（仅图形模式启动时有效）
+     * @return 语言配置文件对象
+     */
+    fun readLangs(): Map<String, String>
+    {
+        try {
+            val content: String
+            if (EnvUtil.isPackaged)
+                JarFile(EnvUtil.jarFile.path).use { jar ->
+                    val langFileInZip = jar.getJarEntry("lang.yml") ?: throw ConfigFileNotFoundException("找不到配置文件lang.yml")
+                    jar.getInputStream(langFileInZip).use { content = it.readBytes().decodeToString() }
+                }
+            else
+                content = (FileObj(System.getProperty("user.dir")) + "src/main/resources/lang.yml").content
+
+            return Yaml().load(content)
+        } catch (e: JSONException) {
+            throw UnableToDecodeException("语言配置文件无法解码:\n" + e.message)
         }
     }
 

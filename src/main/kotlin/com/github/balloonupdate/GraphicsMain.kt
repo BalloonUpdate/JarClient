@@ -1,6 +1,7 @@
 @file:JvmName("LittleClientMain")
 package com.github.balloonupdate
 
+import com.github.balloonupdate.data.LanguageOptions
 import com.github.balloonupdate.exception.BaseException
 import com.github.balloonupdate.logging.ConsoleHandler
 import com.github.balloonupdate.logging.FileHandler
@@ -26,6 +27,11 @@ class GraphicsMain : ClientBase()
      */
     val window = MainWin()
 
+    /**
+     * 语言配置文件对象
+     */
+    val langs = LanguageOptions.CreateFromMap(readLangs())
+
     fun run()
     {
         if (!options.quietMode)
@@ -40,15 +46,15 @@ class GraphicsMain : ClientBase()
         LogSys.closeRangedTag()
 
         // 初始化窗口
-        window.titleTextSuffix = " $appVersion"
-        window.titleText = "文件更新助手"
-        window.stateText = "正在连接到更新服务器..."
+        window.titleTextSuffix = langs.windowTitleSuffix.replace("{APP_VERSION}", "$appVersion")
+        window.titleText = langs.windowTitle
+        window.stateText = langs.connectingMessage
 
         // 连接服务器获取主要更新信息
         val indexResponse = fetchIndexResponse(client, options.server, options.noCache)
 
         // 等待服务器返回最新文件结构数据
-        window.stateText = "正在获取资源更新..."
+        window.stateText = langs.fetchMetadata
         val rawData = httpFetch(client, indexResponse.updateUrl, options.noCache)
         val updateInfo: JSONArray
         try {
@@ -99,7 +105,7 @@ class GraphicsMain : ClientBase()
             LogSys.openRangedTag("普通对比")
             diff = CommonModeCalculator(targetDirectory, remoteFiles, opt)() {
                 scannedCount += 1
-                window.progress1text = "正在检查资源..."
+                window.progress1text = langs.checkLocalFiles
                 window.stateText = it.name
                 window.progress1value = ((scannedCount/fileCount.toFloat())*1000).toInt()
             }
@@ -172,7 +178,7 @@ class GraphicsMain : ClientBase()
                     // 转换并添加 KB/MB 单位（应该没有人下载速度 <1KB/s || >1GB/s 吧），放在这里是因为 stateText 已经显示文件名了
                     window.progress1text = downloadSpeedRaw.run { if (this > 1024) "${(this/1024).toInt()}MB/s" else "${this.toInt()}KB/s"} + "   -  $currProgressInString%"
                     window.progress2text = "$totalProgressInString%  -  ${downloadedCount + 1}/${diff.newFiles.values.size}"
-                    window.titleText = "($totalProgressInString%) 文件更新助手"
+                    window.titleText = langs.windowTitleDownloading.replace("{PERCENT}", totalProgressInString)
                 }
                 file.file.setLastModified(modified)
 
@@ -189,8 +195,8 @@ class GraphicsMain : ClientBase()
         {
             val news = diff.newFiles
             val hasUpdate = news.isEmpty()
-            val title = if(hasUpdate) "检查更新完毕" else "文件更新完毕"
-            val content = if(hasUpdate) "所有文件已是最新!" else "成功更新${news.size}个文件!"
+            val title = if(hasUpdate) langs.finishMessageTitleHasUpdate else langs.finishMessageTitleNoUpdate
+            val content = if(hasUpdate) langs.finishMessageContentHasUpdate else langs.finishMessageContentNoUpdate.replace("{COUNT}", "${news.size}")
             JOptionPane.showMessageDialog(null, content, title, JOptionPane.INFORMATION_MESSAGE)
         }
 
@@ -259,7 +265,9 @@ class GraphicsMain : ClientBase()
                     throw e
                 }
             } finally {
-                ins.window.destroy()
+                try {
+                    ins.window.destroy()
+                } catch (_: UninitializedPropertyAccessException) { }
                 LogSys.destory()
             }
         }
