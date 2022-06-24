@@ -1,15 +1,20 @@
 package com.github.balloonupdate.gui
 
+import com.github.balloonupdate.event.Event
+import java.awt.event.WindowEvent
+import java.awt.event.WindowListener
 import javax.swing.*
 
 class MainWin
 {
-    private var window = JFrame()
-    private var stateLabel = JLabel()
-    private var progressBar1 = JProgressBar()
-    private var progressBar2 = JProgressBar()
+    var window = JFrame()
+    var stateLabel = JLabel()
+    var progressBar1 = JProgressBar()
+    var progressBar2 = JProgressBar()
 
     var titleTextSuffix = ""
+
+    val onWindowClosing = Event<MainWin>()
 
     constructor()
     {
@@ -38,6 +43,25 @@ class MainWin
         progressBar1.maximum = 1000 // 设置进度条最大值
         progressBar2.isStringPainted = true // 用字符串代替进度百分比
         progressBar2.maximum = 1000 // 设置进度条最大值
+
+        window.addWindowListener(object : WindowListener {
+            override fun windowOpened(e: WindowEvent?) { }
+
+            override fun windowClosing(e: WindowEvent?) {
+                onWindowClosing.invoke(this@MainWin)
+            }
+
+            override fun windowClosed(e: WindowEvent?) { }
+
+            override fun windowIconified(e: WindowEvent?) { }
+
+            override fun windowDeiconified(e: WindowEvent?) { }
+
+            override fun windowActivated(e: WindowEvent?) { }
+
+            override fun windowDeactivated(e: WindowEvent?) {}
+
+        })
     }
 
     /**

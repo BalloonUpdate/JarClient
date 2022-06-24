@@ -2,22 +2,25 @@
 package com.github.balloonupdate
 
 import com.github.balloonupdate.data.LanguageOptions
+import com.github.balloonupdate.diff.CommonModeCalculator
+import com.github.balloonupdate.diff.DiffCalculatorBase
+import com.github.balloonupdate.diff.OnceModeCalculator
 import com.github.balloonupdate.exception.BaseException
+import com.github.balloonupdate.exception.UnableToDecodeException
+import com.github.balloonupdate.gui.MainWin
 import com.github.balloonupdate.logging.ConsoleHandler
 import com.github.balloonupdate.logging.FileHandler
 import com.github.balloonupdate.logging.LogSys
+import com.github.balloonupdate.util.EnvUtil
 import com.github.balloonupdate.util.HttpUtil.httpDownload
 import com.github.balloonupdate.util.HttpUtil.httpFetch
-import com.github.balloonupdate.gui.MainWin
-import com.github.balloonupdate.diff.DiffCalculatorBase
-import com.github.balloonupdate.diff.CommonModeCalculator
-import com.github.balloonupdate.diff.OnceModeCalculator
-import com.github.balloonupdate.exception.UnableToDecodeException
-import com.github.balloonupdate.util.EnvUtil
 import com.github.balloonupdate.util.Utils
 import org.json.JSONArray
 import org.json.JSONException
-import java.lang.Exception
+import java.io.InterruptedIOException
+import java.nio.channels.ClosedByInterruptException
+import java.nio.channels.InterruptibleChannel
+import javax.swing.JFrame
 import javax.swing.JOptionPane
 
 class GraphicsMain : ClientBase()
@@ -34,9 +37,6 @@ class GraphicsMain : ClientBase()
 
     fun run()
     {
-        if (!options.quietMode)
-            window.show()
-
         // 输出调试信息
         LogSys.openRangedTag("环境")
         LogSys.debug("更新目录: ${updateDir.path}")
@@ -45,11 +45,60 @@ class GraphicsMain : ClientBase()
         LogSys.debug("应用版本: $appVersion (${EnvUtil.gitCommit})")
         LogSys.closeRangedTag()
 
+        // 将更新任务单独分进一个线程执行，方便随时打断线程
+        var ex: Throwable? = null
+        val task = Thread {
+            try {
+                updatingTask()
+            } catch (e: SecurityException) {
+                ex = e
+            } catch (e: InterruptedException) {
+                ex = e
+            } catch (e: ClosedByInterruptException) {
+                ex = e
+            } catch (e: InterruptedIOException) {
+                ex = e
+            } catch (e: Exception) {
+                ex = e
+            }
+        }
+
+        if (!options.quietMode)
+            window.show()
+
         // 初始化窗口
         window.titleTextSuffix = langs.windowTitleSuffix.replace("{APP_VERSION}", "$appVersion")
         window.titleText = langs.windowTitle
         window.stateText = langs.connectingMessage
 
+        window.window.defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
+        window.onWindowClosing.once { win ->
+            win.hide()
+            if (task.isAlive)
+                task.interrupt()
+        }
+
+        // 启动并等待更新线程
+        task.start()
+        task.join()
+
+        // 转发更新线程里的异常
+        if (ex != null)
+        {
+            val e = ex!!
+
+            if (
+                e !is SecurityException &&
+                e !is InterruptedException &&
+                e !is InterruptedIOException &&
+                e !is ClosedByInterruptException
+            )
+                throw ex!!
+        }
+    }
+
+    fun updatingTask()
+    {
         // 连接服务器获取主要更新信息
         val indexResponse = fetchIndexResponse(client, options.server, options.noCache)
 
