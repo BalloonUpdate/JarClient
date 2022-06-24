@@ -19,7 +19,6 @@ import org.json.JSONArray
 import org.json.JSONException
 import java.io.InterruptedIOException
 import java.nio.channels.ClosedByInterruptException
-import java.nio.channels.InterruptibleChannel
 import javax.swing.JFrame
 import javax.swing.JOptionPane
 
@@ -276,11 +275,11 @@ class GraphicsMain : ClientBase()
         @JvmStatic
         fun main(args: Array<String>)
         {
-            main()
+            main(false)
         }
 
         @JvmStatic
-        fun main()
+        fun main(isJavaAgentMode: Boolean)
         {
             try {
                 LogSys.addHandler(FileHandler(LogSys, progDir + "balloon_update.log"))
@@ -299,18 +298,23 @@ class GraphicsMain : ClientBase()
                 }
 
                 val title = "发生错误 ${ins.appVersion}"
-
                 var content = if(e is BaseException) e.getDisplayName() else e.javaClass.name
-                content += "\n" + Utils.stringBreak((e.message ?: "没有更多异常信息"), 80)
-                content += "\n\n点击\"是\"显示错误详情，点击\"否\"退出程序"
+                content += "\n" + Utils.stringBreak((e.message ?: "没有更多异常信息"), 80) + "\n\n"
+                content += if (isJavaAgentMode) "点击\"是\"显示错误详情，" else "点击\"是\"显示错误详情，"
+                content += if (isJavaAgentMode) "点击\"否\"继续启动Minecraft" else "点击\"否\"退出程序"
 
-                if(DialogUtil.confirm(title, content))
-                    DialogUtil.error("调用堆栈", e.stackTraceToString())
+                val choice = DialogUtil.confirm(title, content)
 
-                if (ins.options.noThrowing)
+                if (isJavaAgentMode)
                 {
-                    println("文件更新失败！但因为设置了no-throwing参数，游戏仍会继续运行！\n\n\n")
+                    if (choice)
+                    {
+                        DialogUtil.error("调用堆栈", e.stackTraceToString())
+                        throw e
+                    }
                 } else {
+                    if (choice)
+                        DialogUtil.error("调用堆栈", e.stackTraceToString())
                     throw e
                 }
             } finally {

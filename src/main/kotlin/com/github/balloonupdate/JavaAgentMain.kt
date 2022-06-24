@@ -159,7 +159,7 @@ class JavaAgentMain : ClientBase()
         {
             if (Desktop.isDesktopSupported() && agentArgs != "windowless")
             {
-                GraphicsMain.main()
+                GraphicsMain.main(true)
                 return
             }
 
