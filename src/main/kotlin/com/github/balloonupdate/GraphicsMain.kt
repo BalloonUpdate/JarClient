@@ -143,15 +143,21 @@ class GraphicsMain : ClientBase()
             val fileCount = Utils.countFiles(targetDirectory)
             var scannedCount = 0
 
-            val opt = DiffCalculatorBase.Options(
+            val commonOpt = DiffCalculatorBase.Options(
                 patterns = indexResponse.commonMode,
+                checkModified = options.checkModified,
+                androidPatch = null,
+            )
+
+            val onceOpt = DiffCalculatorBase.Options(
+                patterns = indexResponse.onceMode,
                 checkModified = options.checkModified,
                 androidPatch = null,
             )
 
             // 开始文件对比过程
             LogSys.openRangedTag("普通对比")
-            diff = CommonModeCalculator(targetDirectory, remoteFiles, opt)() {
+            diff = CommonModeCalculator(targetDirectory, remoteFiles, commonOpt)() {
                 scannedCount += 1
                 window.progress1text = langs.checkLocalFiles
                 window.stateText = it.name
@@ -161,7 +167,7 @@ class GraphicsMain : ClientBase()
             LogSys.closeRangedTag()
 
             LogSys.openRangedTag("补全对比")
-            diff += OnceModeCalculator(targetDirectory, remoteFiles, opt)()
+            diff += OnceModeCalculator(targetDirectory, remoteFiles, onceOpt)()
             LogSys.closeRangedTag()
 
             // 输出差异信息
