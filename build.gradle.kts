@@ -27,6 +27,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("org.json:json:20220320")
     implementation("com.hrakaroo:glob:0.9.0")
+    implementation("com.formdev:flatlaf:2.4")
+    implementation("com.formdev:flatlaf-intellij-themes:2.4")
     implementation(kotlin("stdlib-jdk8"))
 }
 
