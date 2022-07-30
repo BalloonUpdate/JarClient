@@ -20,8 +20,13 @@ object EnvUtil
      * 获取当前Jar文件路径（仅打包后有效）
      */
     @JvmStatic
-    val jarFile: FileObj
-        get() = FileObj(URLDecoder.decode(EnvUtil.javaClass.protectionDomain.codeSource.location.file, "UTF-8"))
+    val jarFile: FileObj get() {
+        val url = URLDecoder.decode(EnvUtil.javaClass.protectionDomain.codeSource.location.file, "UTF-8").replace("\\", "/")
+        return FileObj(if (url.endsWith(".class") && "!" in url) {
+            val path = url.substring(0, url.lastIndexOf("!"))
+            if ("file:/" in path) path.substring(path.indexOf("file:/") + "file:/".length) else path
+        } else url)
+    }
 
     val version: String by lazy { manifest["Version"] ?: "0.0.0" }
 
