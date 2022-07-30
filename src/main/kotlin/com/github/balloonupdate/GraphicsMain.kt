@@ -1,7 +1,6 @@
 @file:JvmName("LittleClientMain")
 package com.github.balloonupdate
 
-import com.formdev.flatlaf.intellijthemes.FlatOneDarkIJTheme
 import com.github.balloonupdate.data.LanguageOptions
 import com.github.balloonupdate.diff.CommonModeCalculator
 import com.github.balloonupdate.diff.DiffCalculatorBase
@@ -273,7 +272,6 @@ class GraphicsMain : ClientBase()
             = JOptionPane.showMessageDialog(null, content, title, JOptionPane.INFORMATION_MESSAGE)
     }
 
-
     companion object {
         lateinit var ins: GraphicsMain
 
@@ -290,11 +288,12 @@ class GraphicsMain : ClientBase()
         fun main(isJavaAgentMode: Boolean)
         {
             try {
-                //设置主题
+                //设置 GUI 主题
                 FlatOneDarkIJTheme.setup()
+                
                 LogSys.addHandler(FileHandler(LogSys, progDir + "balloon_update.log"))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.DEBUG))
-
+                
                 ins = GraphicsMain()
                 ins.run()
             } catch (e: Throwable) {
