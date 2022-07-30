@@ -1,6 +1,7 @@
 @file:JvmName("LittleClientMain")
 package com.github.balloonupdate
 
+import com.formdev.flatlaf.intellijthemes.FlatOneDarkIJTheme
 import com.github.balloonupdate.data.LanguageOptions
 import com.github.balloonupdate.diff.CommonModeCalculator
 import com.github.balloonupdate.diff.DiffCalculatorBase
