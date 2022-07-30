@@ -3,6 +3,7 @@ package com.github.balloonupdate.util
 
 import com.github.balloonupdate.data.FileObj
 import com.github.balloonupdate.exception.ManifestNotReadableException
+import org.apache.logging.log4j.LogManager
 import java.net.URLDecoder
 import java.util.jar.Attributes
 import java.util.jar.JarFile

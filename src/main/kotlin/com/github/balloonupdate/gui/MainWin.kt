@@ -4,11 +4,9 @@ import com.github.balloonupdate.event.Event
 import java.awt.event.WindowEvent
 import java.awt.event.WindowListener
 import javax.swing.*
-import com.formdev.flatlaf.intellijthemes.FlatOneDarkIJTheme;
 
 class MainWin
 {
-
     var window = JFrame()
     var stateLabel = JLabel()
     var progressBar1 = JProgressBar()
@@ -20,14 +18,12 @@ class MainWin
 
     constructor()
     {
-        // 设置主题
-        FlatOneDarkIJTheme.setup()
         // 主窗口
         window.run {
             title = "文件更新助手"
             isUndecorated = false
 //            isAlwaysOnTop = true
-            defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+//            defaultCloseOperation = JFrame.EXIT_ON_CLOSE
             contentPane.layout = null
             isVisible = false
 //            isResizable = false
