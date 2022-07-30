@@ -155,7 +155,7 @@ class JavaAgentMain : ClientBase()
 
     companion object {
         @JvmStatic
-        fun premain(agentArgs: String?, ins: Instrumentation)
+        fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             if (Desktop.isDesktopSupported() && agentArgs != "windowless")
             {
