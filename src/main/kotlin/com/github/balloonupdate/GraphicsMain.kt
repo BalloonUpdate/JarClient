@@ -288,9 +288,12 @@ class GraphicsMain : ClientBase()
         fun main(isJavaAgentMode: Boolean)
         {
             try {
+                //设置 GUI 主题
+                FlatOneDarkIJTheme.setup()
+                
                 LogSys.addHandler(FileHandler(LogSys, progDir + "balloon_update.log"))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.DEBUG))
-
+                
                 ins = GraphicsMain()
                 ins.run()
             } catch (e: Throwable) {
