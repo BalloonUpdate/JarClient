@@ -18,6 +18,7 @@ import com.github.balloonupdate.util.HttpUtil.httpFetch
 import com.github.balloonupdate.util.Utils
 import org.json.JSONArray
 import org.json.JSONException
+import java.awt.Desktop
 import java.io.InterruptedIOException
 import java.nio.channels.ClosedByInterruptException
 import javax.swing.JFrame
@@ -289,9 +290,12 @@ class GraphicsMain : ClientBase()
         fun main(isJavaAgentMode: Boolean)
         {
             try {
-                //设置 GUI 主题
-                FlatOneDarkIJTheme.setup()
-                
+                if (!isJavaAgentMode && Desktop.isDesktopSupported())
+                {
+                    //设置 GUI 主题
+                    FlatOneDarkIJTheme.setup()
+                }
+
                 LogSys.addHandler(FileHandler(LogSys, progDir + "balloon_update.log"))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.DEBUG))
                 
