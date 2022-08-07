@@ -7,6 +7,7 @@ import com.github.balloonupdate.exception.UpdateDirNotFoundException
 import com.github.balloonupdate.util.EnvUtil
 import com.github.balloonupdate.util.HttpUtil
 import com.github.balloonupdate.util.Utils
+import com.github.kasuminova.BalloonUpdate
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONException
@@ -27,7 +28,7 @@ open class ClientBase
     /**
      * 配置文件对象
      */
-    val options = GlobalOptions.CreateFromMap(readConfig(progDir + "config.yml"))
+    val options = GlobalOptions.CreateFromMap(readConfig(progDir + "BalloonUpdate.yml"))
 
     /**
      * 更新目录（更新目录指从哪个目录起始，更新所有子目录）
@@ -77,7 +78,7 @@ open class ClientBase
     }
 
     /**
-     * 从Jar文件内读取语言配置文件（仅图形模式启动时有效）
+     * 从 Jar 文件内读取语言配置文件（仅图形模式启动时有效）
      * @return 语言配置文件对象
      */
     fun readLangs(): Map<String, String>
@@ -199,7 +200,7 @@ open class ClientBase
          */
         @JvmStatic
         val workDir = System.getProperty("user.dir").run {
-           if(EnvUtil.isPackaged)
+           if (EnvUtil.isPackaged)
                FileObj(this)
            else
                FileObj("$this${File.separator}workdir").also { it.mkdirs() }
@@ -207,8 +208,10 @@ open class ClientBase
 
         /**
          * 程序所在目录
+         *
+         * 此方法已在 CoreMod 分支中被重写，直接返回游戏目录
          */
         @JvmStatic
-        val progDir = if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir
+        val progDir = FileObj(BalloonUpdate.mcLocation + "/config")
     }
 }

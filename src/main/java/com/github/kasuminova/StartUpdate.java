@@ -1,6 +1,6 @@
 package com.github.kasuminova;
 
-import com.github.balloonupdate.JavaAgentMain;
+import com.github.balloonupdate.GraphicsMain;
 import net.minecraftforge.fml.relauncher.IFMLCallHook;
 
 import java.util.Map;
@@ -13,7 +13,7 @@ public class StartUpdate implements IFMLCallHook {
 
     @Override
     public Void call() {
-        JavaAgentMain.premain(null,null);
+        GraphicsMain.main(false);
         return null;
     }
 }

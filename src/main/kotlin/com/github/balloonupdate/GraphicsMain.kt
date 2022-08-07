@@ -274,6 +274,7 @@ class GraphicsMain : ClientBase()
             = JOptionPane.showMessageDialog(null, content, title, JOptionPane.INFORMATION_MESSAGE)
     }
 
+
     companion object {
         lateinit var ins: GraphicsMain
 
@@ -290,6 +291,7 @@ class GraphicsMain : ClientBase()
         fun main(isJavaAgentMode: Boolean)
         {
             try {
+
                 if (!isJavaAgentMode && Desktop.isDesktopSupported())
                 {
                     //设置 GUI 主题
@@ -298,7 +300,7 @@ class GraphicsMain : ClientBase()
 
                 LogSys.addHandler(FileHandler(LogSys, progDir + "balloon_update.log"))
                 LogSys.addHandler(ConsoleHandler(LogSys, LogSys.LogLevel.DEBUG))
-                
+
                 ins = GraphicsMain()
                 ins.run()
             } catch (e: Throwable) {

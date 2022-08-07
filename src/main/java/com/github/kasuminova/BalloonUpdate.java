@@ -10,6 +10,7 @@ import java.util.Map;
 @IFMLLoadingPlugin.Name("BalloonUpdatePlugin")
 @IFMLLoadingPlugin.TransformerExclusions("github.kasuminova")
 public class BalloonUpdate implements IFMLLoadingPlugin {
+    public static String mcLocation = null;
     static Logger logger = LogManager.getLogger("AutoUpdaterMod");
     @Override
     public String[] getASMTransformerClass() {
@@ -28,7 +29,7 @@ public class BalloonUpdate implements IFMLLoadingPlugin {
 
     @Override
     public void injectData(Map<String, Object> data) {
-
+        mcLocation = data.get("mcLocation").toString();
     }
 
     @Override

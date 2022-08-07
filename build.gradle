@@ -6,10 +6,10 @@ plugins {
 
 
 group = 'github'
-version = '1.0'
+version = '1.0.1-Stable_4.1.9'
 
 java {
-    archivesBaseName = 'balloonupdatemod'
+    archivesBaseName = '!BalloonUpdateModClient-1.12.2'
     toolchain.languageVersion = JavaLanguageVersion.of(8)
 }
 
@@ -94,13 +94,14 @@ dependencies {
     // that the dep is a ForgeGradle 'patcher' dependency, and its patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation("org.yaml:snakeyaml:1.30")
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("org.json:json:20220320")
-    implementation("com.hrakaroo:glob:0.9.0")
-    implementation("com.formdev:flatlaf:2.4")
-    implementation("com.formdev:flatlaf-intellij-themes:2.4")
+    implementation ("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation ("org.yaml:snakeyaml:1.30")
+    implementation ("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation ("org.json:json:20220320")
+    implementation ("com.hrakaroo:glob:0.9.0")
+    implementation ("com.formdev:flatlaf:2.4")
+    implementation ("com.formdev:flatlaf-intellij-themes:2.4")
+
     // Real mod deobf dependency examples - these get remapped to your current mappings
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api") // Adds JEI API as a compile dependency
     // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}") // Adds the full JEI mod as a runtime dependency
@@ -118,15 +119,10 @@ dependencies {
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "BalloonUpdateMod",
-                "Specification-Vendor"    : "BalloonUpdate&KasumiNova",
-                "Specification-Version"   : "1",
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : project.jar.archiveVersion,
-                "Implementation-Vendor"   : "BalloonUpdate",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "FMLCorePlugin": "com.github.kasuminova.BalloonUpdate",
-                "FMLCorePluginContainsFMLMod": true
+                "Version" : "4.1.9_ModVer",
+                "ModVerion" : "1.0.1-Stable",
+                "FMLCorePlugin" : "com.github.kasuminova.BalloonUpdate",
+                "FMLCorePluginContainsFMLMod" : false
         ])
     }
 }
