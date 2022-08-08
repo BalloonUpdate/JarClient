@@ -10,7 +10,6 @@ import com.github.balloonupdate.diff.DiffCalculatorBase
 import com.github.balloonupdate.diff.CommonModeCalculator
 import com.github.balloonupdate.diff.OnceModeCalculator
 import com.github.balloonupdate.exception.UnableToDecodeException
-import com.github.balloonupdate.patch.AndroidPatch
 import org.json.JSONArray
 import org.json.JSONException
 import java.awt.Desktop
@@ -41,17 +40,6 @@ class JavaAgentMain : ClientBase()
             updateInfo = JSONArray(rawData)
         } catch (e: JSONException) {
             throw UnableToDecodeException("Json无法解码(对应URL: ${indexResponse.updateUrl}):\n"+e.message)
-        }
-
-        // 读取安卓补丁内容
-        val androidPatch = if (options.checkModified && options.androidPatch != null) AndroidPatch(progDir + options.androidPatch) else null
-        if (androidPatch != null)
-        {
-            val loaded = androidPatch.load()
-            if (loaded == null)
-                LogSys.info("没有找到补丁数据")
-            else
-                LogSys.info("读取到 $loaded 条补丁数据")
         }
 
         // 使用版本缓存
@@ -86,7 +74,6 @@ class JavaAgentMain : ClientBase()
             val opt = DiffCalculatorBase.Options(
                 patterns = indexResponse.commonMode,
                 checkModified = options.checkModified,
-                androidPatch = androidPatch,
             )
 
             // 开始文件对比过程
@@ -140,9 +127,6 @@ class JavaAgentMain : ClientBase()
         // 更新版本缓存文件
         if(options.versionCache.isNotEmpty())
             versionFile.content = Utils.sha1(rawData)
-
-        // 更新安卓补丁内容
-        androidPatch?.update(updateDir, remoteFiles)
 
         // 显示更新小节
         val totalUpdated = diff.newFiles.size + diff.oldFiles.size

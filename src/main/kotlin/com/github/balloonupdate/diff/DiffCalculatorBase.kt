@@ -4,7 +4,6 @@ import com.github.balloonupdate.data.FileObj
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
-import com.github.balloonupdate.patch.AndroidPatch
 import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 
@@ -126,11 +125,6 @@ abstract class DiffCalculatorBase(val local: FileObj, val remote: List<SimpleFil
          * 此选项可以包含Glob表达式，也可以包含正则表达式
          */
         val patterns: List<String>,
-
-        /**
-         * 针对安卓系统的文件修改时间补丁
-         */
-        val androidPatch: AndroidPatch?,
 
         /**
          * 是否检测文件修改时间，而不是每次都完整检查文件校验，此选项可以节省时间

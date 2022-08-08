@@ -9,7 +9,6 @@ data class GlobalOptions (
     val versionCache: String,
     val noCache: String?,
     val checkModified: Boolean,
-    val androidPatch: String?,
     val noThrowing: Boolean,
     val quietMode: Boolean,
 ) {
@@ -24,7 +23,6 @@ data class GlobalOptions (
                 versionCache = getOption<String>(map, "version-cache") ?: "",
                 noCache = getOption<String>(map, "no-cache"),
                 checkModified = getOption<Boolean>(map, "check-modified") ?: false,
-                androidPatch = getOption<String>(map, "android-patch"),
                 noThrowing = getOption<Boolean>(map, "no-throwing") ?: false,
                 quietMode = getOption<Boolean>(map, "quiet-mode") ?: false,
             )
