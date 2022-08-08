@@ -146,13 +146,11 @@ class GraphicsMain : ClientBase()
             val commonOpt = DiffCalculatorBase.Options(
                 patterns = indexResponse.commonMode,
                 checkModified = options.checkModified,
-                androidPatch = null,
             )
 
             val onceOpt = DiffCalculatorBase.Options(
                 patterns = indexResponse.onceMode,
                 checkModified = options.checkModified,
-                androidPatch = null,
             )
 
             // 开始文件对比过程

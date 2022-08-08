@@ -85,15 +85,7 @@ class CommonModeCalculator(local: FileObj, remote: List<SimpleFileObject>, opt: 
         var isUpToDate = false
 
         if(opt.checkModified)
-        {
-            val ap = opt.androidPatch
-            isUpToDate = if (ap != null) {
-                val rpath = l.relativizedBy(base)
-                ap[rpath]?.run { l.modified == first && r.modified == second } ?: false
-            } else {
-                l.modified == r.modified
-            }
-        }
+            isUpToDate = l.modified == r.modified
 
         if(!isUpToDate)
         {
