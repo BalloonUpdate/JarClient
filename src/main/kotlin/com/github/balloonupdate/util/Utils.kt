@@ -1,7 +1,5 @@
 package com.github.balloonupdate.util
-import com.github.balloonupdate.data.FileObj
 import com.github.balloonupdate.exception.SecurityReasonException
-import com.github.balloonupdate.logging.LogSys
 import java.lang.ClassCastException
 import java.security.MessageDigest
 
@@ -19,7 +17,7 @@ object Utils
         try {
             files = directory.files
         } catch (e: NullPointerException) {
-            throw SecurityReasonException("由于安全机制或者IO错误，无法访问目录: " + directory.path)
+            throw SecurityReasonException(directory.path)
         }
 
         for (f in files)
@@ -92,5 +90,12 @@ object Utils
         } catch (e: ClassCastException) {
             number as Long
         }
+    }
+
+    fun getUrlFilename(url: String): String
+    {
+        if ("/" !in url)
+            return ""
+        return url.substring(url.lastIndexOf("/") + 1)
     }
 }

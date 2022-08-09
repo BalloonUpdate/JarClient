@@ -1,4 +1,4 @@
-package com.github.balloonupdate.data
+package com.github.balloonupdate.util
 
 import java.io.File
 import java.io.FileInputStream
