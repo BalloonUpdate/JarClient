@@ -42,7 +42,23 @@ data class GlobalOptions (
      * 按键模式，仅在有文件需要被更新时显示下载窗口
      */
     val quietMode: Boolean,
-) {
+
+    /**
+     * 全局http连接超时（单位毫秒）
+     */
+    val httpConnectTimeout: Int,
+
+    /**
+     * 全局http读取超时（单位毫秒）
+     */
+    val httpReadTimeout: Int,
+
+    /**
+     * 全局http写入超时（单位毫秒）
+     */
+    val httpWriteTimeout: Int,
+
+    ) {
     companion object {
         @JvmStatic
         fun CreateFromMap(map: Map<String, Any>): GlobalOptions
@@ -56,6 +72,9 @@ data class GlobalOptions (
                 checkModified = getOption<Boolean>(map, "check-modified") ?: false,
                 noThrowing = getOption<Boolean>(map, "no-throwing") ?: false,
                 quietMode = getOption<Boolean>(map, "quiet-mode") ?: false,
+                httpConnectTimeout = getOption<Int>(map, "http-connect-timeout") ?: 5000,
+                httpReadTimeout = getOption<Int>(map, "http-read-timeout") ?: 10000,
+                httpWriteTimeout = getOption<Int>(map, "http-write-timeout") ?: 5000,
             )
         }
 
