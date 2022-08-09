@@ -50,3 +50,12 @@ server: http://127.0.0.1:8000/index.json
 # 如果需要区分是更新问题还是游戏本身的问题，请查看游戏启动日志
 # 此选项仅当程序以JavaAgent模式（非图形模式）启动时有效
 # no-throwing: true
+
+# 全局http连接超时（单位毫秒）
+# http-connect-timeout: 5000
+
+# 全局http读取超时（单位毫秒）
+# http-read-timeout: 10000
+
+# 全局http写入超时（单位毫秒）
+# http-write-timeout: 5000
