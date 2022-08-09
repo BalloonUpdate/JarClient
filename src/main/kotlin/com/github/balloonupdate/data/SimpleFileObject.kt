@@ -2,15 +2,8 @@ package com.github.balloonupdate.data
 
 abstract class SimpleFileObject(var name: String)
 
-class SimpleDirectory: SimpleFileObject
+class SimpleDirectory(name: String, var files: List<SimpleFileObject>) : SimpleFileObject(name)
 {
-    var files: List<SimpleFileObject>
-
-    constructor(name: String, files: List<SimpleFileObject>) : super(name)
-    {
-        this.files = files
-    }
-
     operator fun get(name: String): SimpleFileObject?
     {
         for(f in files)
@@ -25,16 +18,4 @@ class SimpleDirectory: SimpleFileObject
     }
 }
 
-class SimpleFile: SimpleFileObject
-{
-    var length: Long
-    var hash: String
-    var modified: Long
-
-    constructor(name: String, length: Long, hash: String, modified: Long) : super(name)
-    {
-        this.length = length
-        this.hash = hash
-        this.modified = modified
-    }
-}
+class SimpleFile(name: String, var length: Long, var hash: String, var modified: Long) : SimpleFileObject(name)

@@ -1,6 +1,6 @@
 package com.github.balloonupdate.data
 
-import com.github.balloonupdate.exception.ConfigFileException
+import com.github.balloonupdate.exception.ConfigFieldException
 
 data class GlobalOptions (
     /**
@@ -48,7 +48,7 @@ data class GlobalOptions (
         fun CreateFromMap(map: Map<String, Any>): GlobalOptions
         {
             return GlobalOptions(
-                server = getOption<String>(map, "server") ?: throw ConfigFileException("配置文件中的server选项无效"),
+                server = getOption<String>(map, "server") ?: throw ConfigFieldException("server"),
                 autoExit = getOption<Boolean>(map, "auto-exit") ?: false,
                 basePath = getOption<String>(map, "base-path") ?: "",
                 versionCache = getOption<String>(map, "version-cache") ?: "",
