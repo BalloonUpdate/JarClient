@@ -35,7 +35,7 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("com.github.balloonupdate.GraphicsMain")
+    mainClass.set("com.github.balloonupdate.Main")
 }
 
 tasks.withType<ShadowJar> {
@@ -46,7 +46,7 @@ tasks.withType<ShadowJar> {
         attributes("Git-Commit" to (gitCommitSha ?: ""))
         attributes("Compile-Time" to timestamp)
         attributes("Compile-Time-Ms" to System.currentTimeMillis())
-        attributes("Premain-Class" to "com.github.balloonupdate.JavaAgentMain")
+        attributes("Premain-Class" to "com.github.balloonupdate.Main")
     }
 
     destinationDirectory.set(File(project.buildDir, "production"))
