@@ -41,7 +41,7 @@ public class SetupSwing {
 //        UIManager.put("Component.innerFocusWidth", 1.5);
 //        UIManager.put("Button.innerFocusWidth", 1.5);
 
-        //设置滚动条
+        // 设置scrollbar
         UIManager.put("ScrollBar.showButtons", true);
         UIManager.put("ScrollBar.trackArc", 999);
         UIManager.put("ScrollBar.thumbArc", 999);
