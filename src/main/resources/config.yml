@@ -60,3 +60,6 @@ server: http://127.0.0.1:8000/index.json
 
 # 全局http写入超时（单位毫秒）
 # http-write-timeout: 5000
+
+# 下载文件时使用的线程数，小于等于0时会设置为JVM可用的核心数*2，俗称自动计算
+#download-threads: 0
