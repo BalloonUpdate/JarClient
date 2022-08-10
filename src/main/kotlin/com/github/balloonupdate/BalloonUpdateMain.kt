@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
 import javax.swing.JOptionPane
 
-class Main
+class BalloonUpdateMain
 {
     /**
      * 更新助手主逻辑
@@ -579,7 +579,7 @@ class Main
         fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             val useGraphicsMode = agentArgs != "windowless" && Desktop.isDesktopSupported()
-            Main().run(startsWithGraphicsMode = useGraphicsMode, startsFromJavaAgent = true)
+            BalloonUpdateMain().run(startsWithGraphicsMode = useGraphicsMode, startsFromJavaAgent = true)
             LogSys.info("finished!")
         }
 
@@ -590,7 +590,7 @@ class Main
         fun main(args: Array<String>)
         {
             val useGraphicsMode = !(args.isNotEmpty() && args[0] == "windowless") && Desktop.isDesktopSupported()
-            Main().run(startsWithGraphicsMode = useGraphicsMode, startsFromJavaAgent = false)
+            BalloonUpdateMain().run(startsWithGraphicsMode = useGraphicsMode, startsFromJavaAgent = false)
             LogSys.info("finished!")
         }
     }
