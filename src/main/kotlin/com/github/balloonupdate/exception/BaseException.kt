@@ -1,11 +1,6 @@
 package com.github.balloonupdate.exception
 
-abstract class BaseException: Exception
+abstract class BaseException(message: String) : Exception(message)
 {
-    constructor(message: String): super(message)
-
-    override fun toString(): String
-    {
-        return message ?: "No Exception Message"
-    }
+    override fun toString(): String = message ?: "No Exception Message"
 }
