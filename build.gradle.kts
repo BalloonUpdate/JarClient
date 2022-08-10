@@ -24,7 +24,7 @@ repositories {
 
 dependencies {
     implementation("org.yaml:snakeyaml:1.30")
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("org.json:json:20220320")
     implementation("com.hrakaroo:glob:0.9.0")
     implementation("com.formdev:flatlaf:2.4")
