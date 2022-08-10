@@ -34,34 +34,35 @@ class BalloonUpdateMain
 {
     /**
      * 更新助手主逻辑
-     * @param startsWithGraphicsMode 是否以图形模式启动（桌面环境通常以图形模式启动，安卓环境通常不以图形模式启动）
-     * @param startsFromJavaAgent 是否是从JavaAgent参数启动，还是双击独立启动（java -jar xx.jar也属于独立启动）
+     * @param graphicsMode 是否以图形模式启动（桌面环境通常以图形模式启动，安卓环境通常不以图形模式启动）
+     * @param hasStandaloneProgress 程序是否拥有独立的进程。从JavaAgent参数启动没有独立进程，双击启动有独立进程（java -jar xx.jar也属于独立启动）
+     * @param externalConfigFile 可选的外部配置文件路径，如果为空则使用 progDir/config.yml
      */
-    fun run(startsWithGraphicsMode: Boolean, startsFromJavaAgent: Boolean)
+    fun run(graphicsMode: Boolean, hasStandaloneProgress: Boolean, externalConfigFile: FileObject?)
     {
         try {
             // 设置UI主题
-            if (startsWithGraphicsMode)
+            if (graphicsMode)
                 SetupSwing.init()
 
             val workDir = getWorkDirectory()
             val progDir = getProgramDirectory(workDir)
-            val options = GlobalOptions.CreateFromMap(readConfig(progDir + "config.yml"))
+            val options = GlobalOptions.CreateFromMap(readConfig(externalConfigFile ?: (progDir + "config.yml")))
             val updateDir = getUpdateDirectory(workDir, options)
 
             // 初始化日志系统
-            LogSys.addHandler(FileHandler(LogSys, progDir + (if (startsWithGraphicsMode) "balloon_update.log" else "balloon_update.txt")))
-            LogSys.addHandler(ConsoleHandler(LogSys, if (startsWithGraphicsMode) LogSys.LogLevel.DEBUG else LogSys.LogLevel.INFO))
-            if (startsFromJavaAgent)
+            LogSys.addHandler(FileHandler(LogSys, progDir + (if (graphicsMode) "balloon_update.log" else "balloon_update.txt")))
+            LogSys.addHandler(ConsoleHandler(LogSys, if (graphicsMode) LogSys.LogLevel.DEBUG else LogSys.LogLevel.INFO))
+            if (!hasStandaloneProgress)
                 LogSys.openRangedTag("BalloonUpdate")
 
-            LogSys.info("GraphicsMode:         $startsWithGraphicsMode")
-            LogSys.info("FromJavaAgent:        $startsFromJavaAgent")
+            LogSys.info("GraphicsMode:         $graphicsMode")
+            LogSys.info("Standalone:           $hasStandaloneProgress")
 
             Localization.init(readLangs())
 
             // 初始化UI
-            val window = if (startsWithGraphicsMode) NewWindow() else null
+            val window = if (graphicsMode) NewWindow() else null
 //            val window: MainWin? = null
 
             // 将更新任务单独分进一个线程执行，方便随时打断线程
@@ -104,15 +105,15 @@ class BalloonUpdateMain
                         println(e.stackTraceToString())
                     }
 
-                    if (startsWithGraphicsMode)
+                    if (graphicsMode)
                     {
                         val errMessage = Utils.stringBreak(ex!!.message ?: "<No Exception Message>", 80)
                         val title = "Error occurred ${EnvUtil.version}"
                         var content = errMessage + "\n"
-                        content += if (startsFromJavaAgent) "点击\"是\"显示错误详情并崩溃Minecraft，" else "点击\"是\"显示错误详情并退出，"
-                        content += if (startsFromJavaAgent) "点击\"否\"继续启动Minecraft" else "点击\"否\"直接退出程序"
+                        content += if (!hasStandaloneProgress) "点击\"是\"显示错误详情并崩溃Minecraft，" else "点击\"是\"显示错误详情并退出，"
+                        content += if (!hasStandaloneProgress) "点击\"否\"继续启动Minecraft" else "点击\"否\"直接退出程序"
                         val choice = DialogUtil.confirm(title, content)
-                        if (startsFromJavaAgent)
+                        if (!hasStandaloneProgress)
                         {
                             if (choice)
                             {
@@ -135,13 +136,13 @@ class BalloonUpdateMain
                 }
             }
         } catch (e: UpdateDirNotFoundException) {
-            if (startsWithGraphicsMode)
+            if (graphicsMode)
                 DialogUtil.error("", e.message ?: "<No Exception Message>")
         } catch (e: ConfigFileNotFoundException) {
-            if (startsWithGraphicsMode)
+            if (graphicsMode)
                 DialogUtil.error("", e.message ?: "<No Exception Message>")
         } catch (e: FailedToParsingException) {
-            if (startsWithGraphicsMode)
+            if (graphicsMode)
                 DialogUtil.error("", e.message ?: "<No Exception Message>")
         }
     }
@@ -340,7 +341,7 @@ class BalloonUpdateMain
                         try {
                             download(task, taskRow, i)
                         } catch (_: InterruptedIOException) { break }
-                          catch (_: InterruptedException) { break }
+                        catch (_: InterruptedException) { break }
                     }
                     window?.destroyTaskRow(taskRow!!)
                 }.apply {
@@ -579,7 +580,7 @@ class BalloonUpdateMain
         fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             val useGraphicsMode = agentArgs != "windowless" && Desktop.isDesktopSupported()
-            BalloonUpdateMain().run(startsWithGraphicsMode = useGraphicsMode, startsFromJavaAgent = true)
+            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = false, externalConfigFile = null)
             LogSys.info("finished!")
         }
 
@@ -590,7 +591,7 @@ class BalloonUpdateMain
         fun main(args: Array<String>)
         {
             val useGraphicsMode = !(args.isNotEmpty() && args[0] == "windowless") && Desktop.isDesktopSupported()
-            BalloonUpdateMain().run(startsWithGraphicsMode = useGraphicsMode, startsFromJavaAgent = false)
+            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = true, externalConfigFile = null)
             LogSys.info("finished!")
         }
     }
