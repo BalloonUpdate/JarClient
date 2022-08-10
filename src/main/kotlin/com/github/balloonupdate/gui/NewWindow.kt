@@ -11,10 +11,6 @@ import javax.swing.border.TitledBorder
 
 class NewWindow
 {
-    init {
-        SetupSwing.init()
-    }
-
     var titleTextSuffix = ""
 
     private var window = JFrame()
