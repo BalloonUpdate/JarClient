@@ -1,7 +1,6 @@
 //@file:JvmName("Utils")
 package com.github.balloonupdate.util
 
-import com.github.balloonupdate.data.FileObj
 import com.github.balloonupdate.exception.ManifestNotReadableException
 import java.net.URLDecoder
 import java.util.jar.Attributes
@@ -20,9 +19,10 @@ object EnvUtil
      * 获取当前Jar文件路径（仅打包后有效）
      */
     @JvmStatic
-    val jarFile: FileObj get() {
+    val jarFile: FileObject
+        get() {
         val url = URLDecoder.decode(EnvUtil.javaClass.protectionDomain.codeSource.location.file, "UTF-8").replace("\\", "/")
-        return FileObj(if (url.endsWith(".class") && "!" in url) {
+        return FileObject(if (url.endsWith(".class") && "!" in url) {
             val path = url.substring(0, url.lastIndexOf("!"))
             if ("file:/" in path) path.substring(path.indexOf("file:/") + "file:/".length) else path
         } else url)
@@ -51,7 +51,7 @@ object EnvUtil
     val originManifest: Attributes
         get() {
         if(!isPackaged)
-            throw ManifestNotReadableException("This plugin has not been packaged yet")
+            throw ManifestNotReadableException()
 
         JarFile(jarFile.path).use { jar ->
             jar.getInputStream(jar.getJarEntry("META-INF/MANIFEST.MF")).use {

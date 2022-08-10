@@ -1,13 +1,13 @@
 package com.github.balloonupdate.diff
 
-import com.github.balloonupdate.data.FileObj
+import com.github.balloonupdate.util.FileObject
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
 import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 
-typealias OnScanCallback = (file: FileObj) -> Unit
+typealias OnScanCallback = (file: FileObject) -> Unit
 
 /**
  * 文件差异计算器的基本类
@@ -18,7 +18,7 @@ typealias OnScanCallback = (file: FileObj) -> Unit
  * @param local 要比较的本地文件
  * @param remote 要比较的远程文件
  */
-abstract class DiffCalculatorBase(val local: FileObj, val remote: List<SimpleFileObject>, var opt: Options)
+abstract class DiffCalculatorBase(val local: FileObject, val remote: List<SimpleFileObject>, var opt: Options)
 {
     val base = local
     val result: Difference = Difference()
@@ -26,7 +26,7 @@ abstract class DiffCalculatorBase(val local: FileObj, val remote: List<SimpleFil
     /**
      * 将一个文件文件或者目录标记为旧文件
      */
-    protected fun markAsOld(file: FileObj)
+    protected fun markAsOld(file: FileObject)
     {
         if(file.isDirectory)
         {
@@ -35,26 +35,26 @@ abstract class DiffCalculatorBase(val local: FileObj, val remote: List<SimpleFil
                 if(f.isDirectory)
                     markAsOld(f)
                 else
-                    result.oldFiles += f.relativizedBy(base)
+                    result.oldFiles += f.relativizedBy(base, true)
             }
-            result.oldFolders += file.relativizedBy(base)
+            result.oldFolders += file.relativizedBy(base, true)
         } else {
-            result.oldFiles += file.relativizedBy(base)
+            result.oldFiles += file.relativizedBy(base, true)
         }
     }
 
     /**
      * 将一个文件文件或者目录标记为新文件
      */
-    protected fun markAsNew(node: SimpleFileObject, dir: FileObj)
+    protected fun markAsNew(node: SimpleFileObject, dir: FileObject)
     {
         if(node is SimpleDirectory)
         {
-            result.newFolders += dir.relativizedBy(base)
+            result.newFolders += dir.relativizedBy(base, true)
             for (n in node.files)
                 markAsNew(n, dir + n.name)
         } else if (node is SimpleFile){
-            val rp = dir.relativizedBy(base)
+            val rp = dir.relativizedBy(base, true)
             result.newFiles[rp] = Pair(node.length, node.modified)
         }
     }

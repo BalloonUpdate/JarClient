@@ -11,10 +11,10 @@ object Utils
      * 统计文件数量
      */
     @JvmStatic
-    fun countFiles(directory: FileObj): Int
+    fun countFiles(directory: FileObject): Int
     {
         var count = 0
-        val files: List<FileObj>
+        val files: List<FileObject>
 
         try {
             files = directory.files

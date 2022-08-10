@@ -1,8 +1,10 @@
 package com.github.balloonupdate.util
 
-import com.github.balloonupdate.data.FileObj
-import com.github.balloonupdate.exception.ConnectionClosedException
-import com.github.balloonupdate.exception.HttpRequestFailException
+import com.github.balloonupdate.exception.ConnectionRejectedException
+import com.github.balloonupdate.exception.ConnectionInterruptedException
+import com.github.balloonupdate.exception.ConnectionTimeoutException
+import com.github.balloonupdate.exception.HttpResponseStatusCodeException
+import com.github.balloonupdate.logging.LogSys
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.FileOutputStream
@@ -17,44 +19,42 @@ object HttpUtil
      */
     fun httpFetch(client: OkHttpClient, url: String, noCache: String?): String
     {
-        var url_ = url
+        var link = url
 
-        // 避免CDN缓存
         if(noCache != null)
-            url_ = appendQueryParam(url_, noCache, System.currentTimeMillis().toString())
+            link = appendQueryParam(link, noCache, System.currentTimeMillis().toString())
 
-        val req = Request.Builder().url(url_).build()
-
+        val req = Request.Builder().url(link).build()
+        LogSys.debug("http request on $link")
         try {
             client.newCall(req).execute().use { r ->
-                if(!r.isSuccessful)
-                    throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url_ with httpcode(${r.code})\n"+ r.body?.charStream().use {
-                        it?.readText()?.run { if(length> 300) substring(0, 300)+"\n..." else this } ?: "_None_"
-                    })
-                return r.body!!.string()
+                if(r.isSuccessful)
+                    return r.body!!.string()
+
+                val body = r.body?.string()?.run { if(length> 300) substring(0, 300) + "\n..." else this }
+                throw HttpResponseStatusCodeException(r.code, link, body)
             }
         } catch (e: ConnectException) {
-            throw ConnectionClosedException("无法连接到更新服务器(连接被拒绝)")
+            throw ConnectionRejectedException(link)
         } catch (e: SocketException) {
-            throw ConnectionClosedException("连接中断")
+            throw ConnectionInterruptedException(link)
         } catch (e: SocketTimeoutException) {
-            throw ConnectionClosedException("无法连接到更新服务器(连接超时)")
+            throw ConnectionTimeoutException(link)
         }
     }
 
     /**
      * 从HTTP服务器上下载文件（主要是大文件，二进制文件）
      */
-    fun httpDownload(client: OkHttpClient, url: String, file: FileObj, lengthExpected: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
+    fun httpDownload(client: OkHttpClient, url: String, writeTo: FileObject, lengthExpected: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
     {
-        var url_ = url.replace("+", "%2B")
+        var link = url.replace("+", "%2B")
 
-        // 避免CDN缓存
         if(noCache != null)
-            url_ = appendQueryParam(url_, noCache, System.currentTimeMillis().toString())
+            link = appendQueryParam(link, noCache, System.currentTimeMillis().toString())
 
-        file.makeParentDirs()
-        val req = Request.Builder().url(url_).build()
+        writeTo.makeParentDirs()
+        val req = Request.Builder().url(link).build()
 
         val bufferLen = { filelen: Long ->
             val kb = 1024
@@ -85,10 +85,10 @@ object HttpUtil
                     if(r.isSuccessful)
                     {
                         r.body!!.byteStream().use { input ->
-                            FileOutputStream(file.path).use { output ->
+                            FileOutputStream(writeTo.path).use { output ->
                                 var bytesReceived: Long = 0
-                                var len = 10
-                                val buffer: ByteArray = ByteArray(bufferLen(lengthExpected))
+                                var len: Int
+                                val buffer = ByteArray(bufferLen(lengthExpected))
                                 while (input.read(buffer).also { len = it; bytesReceived += it } != -1)
                                 {
                                     output.write(buffer, 0, len)
@@ -97,15 +97,17 @@ object HttpUtil
                             }
                         }
                     } else {
-                        throw HttpRequestFailException("Http状态码不正确(不在2xx-3xx之间)\n$url_ with httpcode(${r.code})")
+                        throw HttpResponseStatusCodeException(r.code, link, r.body?.string())
                     }
                 }
                 ex = null
                 break
             } catch (e: ConnectException) {
-                ex = ConnectionClosedException("无法连接到服务器")
+                ex = ConnectionInterruptedException(link)
             } catch (e: SocketException) {
-                ex = ConnectionClosedException("连接中断")
+                ex = ConnectionRejectedException(link)
+            } catch (e: SocketTimeoutException) {
+                throw ConnectionTimeoutException(link)
             }
         }
 
