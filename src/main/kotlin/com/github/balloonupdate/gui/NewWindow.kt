@@ -1,13 +1,11 @@
 package com.github.balloonupdate.gui
 
 import com.github.balloonupdate.event.Event
-import com.github.kasuminova.Downloader.SetupSwing
 import com.github.kasuminova.Downloader.VFlowLayout
 import java.awt.BorderLayout
 import java.awt.event.WindowEvent
 import java.awt.event.WindowListener
 import javax.swing.*
-import javax.swing.border.TitledBorder
 
 class NewWindow
 {

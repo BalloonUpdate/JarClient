@@ -1,4 +1,5 @@
 package com.github.balloonupdate.util
+
 import com.github.balloonupdate.exception.SecurityReasonException
 import java.security.MessageDigest
 
