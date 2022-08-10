@@ -26,7 +26,7 @@ class NewWindow
         window.isUndecorated = false
         window.contentPane.layout = BorderLayout()
         window.isVisible = false
-        window.setSize(450, 300)
+        window.setSize(450, 315)
 //        window.setSize(850, 550)
         window.defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
         window.setLocationRelativeTo(null)
