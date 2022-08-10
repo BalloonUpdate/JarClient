@@ -38,7 +38,7 @@ class BalloonUpdateMain
      * @param hasStandaloneProgress 程序是否拥有独立的进程。从JavaAgent参数启动没有独立进程，双击启动有独立进程（java -jar xx.jar也属于独立启动）
      * @param externalConfigFile 可选的外部配置文件路径，如果为空则使用 progDir/config.yml
      */
-    fun run(graphicsMode: Boolean, hasStandaloneProgress: Boolean, externalConfigFile: FileObject?)
+    fun run(graphicsMode: Boolean, hasStandaloneProgress: Boolean, externalConfigFile: FileObject?, enableLogFile: Boolean)
     {
         try {
             // 设置UI主题
@@ -51,7 +51,8 @@ class BalloonUpdateMain
             val updateDir = getUpdateDirectory(workDir, options)
 
             // 初始化日志系统
-            LogSys.addHandler(FileHandler(LogSys, progDir + (if (graphicsMode) "balloon_update.log" else "balloon_update.txt")))
+            if (enableLogFile)
+                LogSys.addHandler(FileHandler(LogSys, progDir + (if (graphicsMode) "balloon_update.log" else "balloon_update.txt")))
             LogSys.addHandler(ConsoleHandler(LogSys, if (graphicsMode) LogSys.LogLevel.DEBUG else LogSys.LogLevel.INFO))
             if (!hasStandaloneProgress)
                 LogSys.openRangedTag("BalloonUpdate")
@@ -580,7 +581,7 @@ class BalloonUpdateMain
         fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             val useGraphicsMode = agentArgs != "windowless" && Desktop.isDesktopSupported()
-            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = false, externalConfigFile = null)
+            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = false, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
 
@@ -591,7 +592,7 @@ class BalloonUpdateMain
         fun main(args: Array<String>)
         {
             val useGraphicsMode = !(args.isNotEmpty() && args[0] == "windowless") && Desktop.isDesktopSupported()
-            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = true, externalConfigFile = null)
+            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = true, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
     }
