@@ -268,6 +268,7 @@ class BalloonUpdateMain
             }.toMutableList()
 
             val lock = Any()
+            val lock1 = Any()
             var committedCount = 0
             var downloadedCount = 0
             val samplers = mutableListOf<SpeedSampler>()
@@ -288,7 +289,6 @@ class BalloonUpdateMain
                     LogSys.debug("request($committedCount/${diff.newFiles.values.size}): ${url}, write to: ${file.path}")
                 }
 
-
                 HttpUtil.httpDownload(okClient, url, file, lengthExpected, options.noCache) { packageLength, received, total ->
                     if (taskRow == null)
                         return@httpDownload
@@ -307,10 +307,13 @@ class BalloonUpdateMain
                     taskRow.progressBarValue = (currentProgress * 10).toInt()
                     taskRow.labelText = convertBytes(speed) + "/s   -  $currProgressInString%"
                     taskRow.progressBarLabel = "${convertBytes(received)} / ${convertBytes(total)}"
-                    window!!.statusBarProgressValue = (totalProgress * 10).toInt()
-                    window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}"
-                    window.statusBarText = convertBytes(samplers.sumOf { it.speed() }) + "/s"
-                    window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
+
+                    synchronized(lock1) {
+                        window!!.statusBarProgressValue = (totalProgress * 10).toInt()
+                        window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}"
+                        window.statusBarText = convertBytes(samplers.sumOf { it.speed() }) + "/s"
+                        window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
+                    }
                 }
 
                 file.file.setLastModified(modified)
