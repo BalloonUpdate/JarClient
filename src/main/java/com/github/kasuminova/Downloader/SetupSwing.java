@@ -13,15 +13,6 @@ public class SetupSwing {
         System.setProperty("awt.useSystemAAFontSettings", "lcd");
         System.setProperty("swing.aatext", "true");
 
-        //设置字体
-        try {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, Objects.requireNonNull(SetupSwing.class.getResourceAsStream("/font/font.ttf")));
-            Font newFont = font.deriveFont(14f);
-            initGlobalFont(newFont);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         //更新 UI
         try {
             UIManager.setLookAndFeel(new FlatAtomOneDarkIJTheme());
