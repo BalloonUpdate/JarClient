@@ -242,7 +242,7 @@ class BalloonUpdateMain
             diff.newFolders.forEach { LogSys.debug("新目录: $it") }
 
             // 删除旧文件和旧目录，还有创建新目录
-            diff.oldFiles.map { (updateDir + it) }.forEach { it.delete() }
+            diff.oldFiles.map { (updateDir + it) }.forEach { if (!EnvUtil.isPackaged || it.path != EnvUtil.jarFile.path) it.delete() }
             diff.oldFolders.map { (updateDir + it) }.forEach { it.delete() }
             diff.newFolders.map { (updateDir + it) }.forEach { it.mkdirs() }
 
