@@ -281,7 +281,7 @@ class BalloonUpdateMain
                 val lengthExpected = task.lengthExpected
                 val modified = task.modified
 
-                val sampler = SpeedSampler(1000, 100)
+                val sampler = SpeedSampler(500, 100)
                 synchronized(lock) {
                     samplers += sampler
 
