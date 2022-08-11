@@ -37,14 +37,12 @@ class BalloonUpdateMain
      * @param graphicsMode 是否以图形模式启动（桌面环境通常以图形模式启动，安卓环境通常不以图形模式启动）
      * @param hasStandaloneProgress 程序是否拥有独立的进程。从JavaAgent参数启动没有独立进程，双击启动有独立进程（java -jar xx.jar也属于独立启动）
      * @param externalConfigFile 可选的外部配置文件路径，如果为空则使用 progDir/config.yml
+     * @param enableLogFile 是否写入日志文件
+     *
      */
     fun run(graphicsMode: Boolean, hasStandaloneProgress: Boolean, externalConfigFile: FileObject?, enableLogFile: Boolean)
     {
         try {
-            // 设置UI主题
-            if (graphicsMode)
-                SetupSwing.init()
-
             val workDir = getWorkDirectory()
             val progDir = getProgramDirectory(workDir)
             val options = GlobalOptions.CreateFromMap(readConfig(externalConfigFile ?: (progDir + "config.yml")))
@@ -584,6 +582,8 @@ class BalloonUpdateMain
         fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             val useGraphicsMode = agentArgs != "windowless" && Desktop.isDesktopSupported()
+            if (useGraphicsMode)
+                SetupSwing.init()
             BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = false, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
@@ -595,6 +595,8 @@ class BalloonUpdateMain
         fun main(args: Array<String>)
         {
             val useGraphicsMode = !(args.isNotEmpty() && args[0] == "windowless") && Desktop.isDesktopSupported()
+            if (useGraphicsMode)
+                SetupSwing.init()
             BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = true, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
