@@ -268,7 +268,6 @@ class BalloonUpdateMain
             }.toMutableList()
 
             val lock = Any()
-            val lock1 = Any()
             var committedCount = 0
             var downloadedCount = 0
             val samplers = mutableListOf<SpeedSampler>()
@@ -308,12 +307,13 @@ class BalloonUpdateMain
                     taskRow.labelText = convertBytes(speed) + "/s   -  $currProgressInString%"
                     taskRow.progressBarLabel = "${convertBytes(received)} / ${convertBytes(total)}"
 
-                    synchronized(lock1) {
-                        window!!.statusBarProgressValue = (totalProgress * 10).toInt()
-                        window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}"
-                        window.statusBarText = convertBytes(samplers.sumOf { it.speed() }) + "/s"
-                        window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
-                    }
+                    val toatalSpeed: Long
+                    synchronized(lock) { toatalSpeed = samplers.sumOf { it.speed() } }
+
+                    window!!.statusBarProgressValue = (totalProgress * 10).toInt()
+                    window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}"
+                    window.statusBarText = convertBytes(toatalSpeed) + "/s"
+                    window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
                 }
 
                 file.file.setLastModified(modified)
