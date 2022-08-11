@@ -35,11 +35,11 @@ abstract class DiffCalculatorBase(val local: FileObject, val remote: List<Simple
                 if(f.isDirectory)
                     markAsOld(f)
                 else
-                    result.oldFiles += f.relativizedBy(base, true)
+                    result.oldFiles += f.relativizedBy(base)
             }
-            result.oldFolders += file.relativizedBy(base, true)
+            result.oldFolders += file.relativizedBy(base)
         } else {
-            result.oldFiles += file.relativizedBy(base, true)
+            result.oldFiles += file.relativizedBy(base)
         }
     }
 
@@ -50,11 +50,11 @@ abstract class DiffCalculatorBase(val local: FileObject, val remote: List<Simple
     {
         if(node is SimpleDirectory)
         {
-            result.newFolders += dir.relativizedBy(base, true)
+            result.newFolders += dir.relativizedBy(base)
             for (n in node.files)
                 markAsNew(n, dir + n.name)
         } else if (node is SimpleFile){
-            val rp = dir.relativizedBy(base, true)
+            val rp = dir.relativizedBy(base)
             result.newFiles[rp] = Pair(node.length, node.modified)
         }
     }
