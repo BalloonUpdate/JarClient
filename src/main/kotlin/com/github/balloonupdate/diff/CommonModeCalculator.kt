@@ -5,6 +5,7 @@ import com.github.balloonupdate.util.FileObject
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
+import kotlin.math.abs
 
 /**
  * 默认同步指定文件夹内的所有文件，
@@ -85,7 +86,7 @@ class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, op
         var isUpToDate = false
 
         if(opt.checkModified)
-            isUpToDate = l.modified == r.modified
+            isUpToDate = abs(l.modified - r.modified) < 5000
 
         if(!isUpToDate)
         {
