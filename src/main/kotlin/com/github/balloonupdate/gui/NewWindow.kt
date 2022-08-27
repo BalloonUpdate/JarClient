@@ -20,6 +20,8 @@ class NewWindow
 
     val onWindowClosing = Event<NewWindow>()
 
+    val taskRowMutex = Any()
+
     init {
         window.isUndecorated = false
         window.contentPane.layout = BorderLayout()
@@ -50,16 +52,18 @@ class NewWindow
      */
     fun createTaskRow(): TaskRow
     {
-        val taskRowPanel = JPanel(VFlowLayout())
-        val box = Box(BoxLayout.LINE_AXIS)
-        val label = JLabel().also { box.add(it, BorderLayout.WEST) }.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 8) }
-        val progress = JProgressBar(0, 1000).apply { isStringPainted = true }.also { box.add(it, BorderLayout.CENTER) }
-        taskRowPanel.border = BorderFactory.createTitledBorder("")
-        taskRowPanel.add(box)
+        synchronized(taskRowMutex) {
+            val taskRowPanel = JPanel(VFlowLayout())
+            val box = Box(BoxLayout.LINE_AXIS)
+            val label = JLabel().also { box.add(it, BorderLayout.WEST) }.apply { border = BorderFactory.createEmptyBorder(0, 0, 0, 8) }
+            val progress = JProgressBar(0, 1000).apply { isStringPainted = true }.also { box.add(it, BorderLayout.CENTER) }
+            taskRowPanel.border = BorderFactory.createTitledBorder("")
+            taskRowPanel.add(box)
 
-        taskList.add(taskRowPanel)
+            taskList.add(taskRowPanel)
 
-        return TaskRow(taskRowPanel, label, progress)
+            return TaskRow(taskRowPanel, label, progress)
+        }
     }
 
     /**
@@ -68,7 +72,9 @@ class NewWindow
      */
     fun destroyTaskRow(taskRow: TaskRow)
     {
-        taskList.remove(taskRow.rowPanel)
+        synchronized(taskRowMutex) {
+            taskList.remove(taskRow.rowPanel)
+        }
     }
 
     /**

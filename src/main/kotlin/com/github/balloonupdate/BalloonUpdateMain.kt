@@ -338,8 +338,10 @@ class BalloonUpdateMain
                     val taskRow = window?.createTaskRow()?.also { windowTaskRows.add(it) }
                     while (synchronized(lock2) { tasks.isNotEmpty() })
                     {
-                        val task: DownloadTask
-                        synchronized(lock2){ task = tasks.removeFirst() }
+                        val task: DownloadTask?
+                        synchronized(lock2){ task = tasks.removeFirstOrNull() }
+                        if (task == null)
+                            continue
                         try {
                             download(task, taskRow, i)
                         } catch (_: InterruptedIOException) { break }
