@@ -95,7 +95,7 @@ object Utils
     /**
      * 字节转换为kb, mb, gb等单位
      */
-    fun convertBytes(bytes: Long, b: String = "b", kb: String = "kb", mb: String = "mb", gb: String = "gb"): String
+    fun convertBytes(bytes: Long, b: String = "B", kb: String = "KB", mb: String = "MB", gb: String = "GB"): String
     {
         return when {
             bytes < 1024 -> "${String.format("%.1f", bytes.toFloat())} $b"
