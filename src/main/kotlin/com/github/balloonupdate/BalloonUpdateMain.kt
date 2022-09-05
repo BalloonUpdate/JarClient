@@ -7,7 +7,7 @@ import com.github.balloonupdate.diff.OnceModeCalculator
 import com.github.balloonupdate.exception.ConfigFileNotFoundException
 import com.github.balloonupdate.exception.FailedToParsingException
 import com.github.balloonupdate.exception.UpdateDirNotFoundException
-import com.github.balloonupdate.gui.NewWindow
+import com.github.balloonupdate.gui.MainWin
 import com.github.balloonupdate.localization.LangNodes
 import com.github.balloonupdate.localization.Localization
 import com.github.balloonupdate.logging.ConsoleHandler
@@ -15,7 +15,6 @@ import com.github.balloonupdate.logging.FileHandler
 import com.github.balloonupdate.logging.LogSys
 import com.github.balloonupdate.util.*
 import com.github.balloonupdate.util.Utils.convertBytes
-import com.github.kasuminova.Downloader.SetupSwing
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONException
@@ -40,7 +39,7 @@ class BalloonUpdateMain
      * @param enableLogFile 是否写入日志文件
      *
      */
-    fun run(graphicsMode: Boolean, hasStandaloneProgress: Boolean, externalConfigFile: FileObject?, enableLogFile: Boolean)
+    fun run(graphicsMode: Boolean, hasStandaloneProgress: Boolean, externalConfigFile: File2?, enableLogFile: Boolean)
     {
         try {
             val workDir = getWorkDirectory()
@@ -61,7 +60,7 @@ class BalloonUpdateMain
             Localization.init(readLangs())
 
             // 初始化UI
-            val window = if (graphicsMode) NewWindow() else null
+            val window = if (graphicsMode) MainWin() else null
 //            val window: MainWin? = null
 
             // 将更新任务单独分进一个线程执行，方便随时打断线程
@@ -75,7 +74,7 @@ class BalloonUpdateMain
 
             window?.titleTextSuffix = Localization[LangNodes.window_title_suffix, "APP_VERSION", EnvUtil.version]
             window?.titleText = Localization[LangNodes.window_title]
-            window?.statusBarText = Localization[LangNodes.connecting_message]
+            window?.progress2text = Localization[LangNodes.connecting_message]
             window?.onWindowClosing?.once { win ->
                 win.hide()
                 if (task.isAlive)
@@ -149,7 +148,7 @@ class BalloonUpdateMain
     /**
      * 更新助手工作线程
      */
-    fun task(window: NewWindow?, options: GlobalOptions, workDir: FileObject, updateDir: FileObject)
+    fun task(window: MainWin?, options: GlobalOptions, workDir: File2, updateDir: File2)
     {
         LogSys.info("updating directory:   ${updateDir.path}")
         LogSys.info("working directory:    ${workDir.path}")
@@ -168,7 +167,7 @@ class BalloonUpdateMain
         val metaResponse = requestIndex(okClient, options.server, options.noCache) // 错误处理
 
         // 更新UI
-        window?.statusBarText = Localization[LangNodes.fetch_metadata]
+        window?.progress2text = Localization[LangNodes.fetch_metadata]
 
         // 获取结构数据
         val rawData = HttpUtil.httpFetch(okClient, metaResponse.updateUrl, options.noCache)
@@ -195,7 +194,7 @@ class BalloonUpdateMain
 
         // 计算文件差异
         LogSys.info("正在计算文件差异...")
-        window?.statusBarText = "正在计算文件差异..."
+        window?.progress2text = "正在计算文件差异..."
 
         var diff = DiffCalculatorBase.Difference()
 
@@ -219,9 +218,9 @@ class BalloonUpdateMain
             LogSys.openRangedTag("CommonMode")
             diff = CommonModeCalculator(updateDir, remoteFiles, commonOpt)() {
                 scannedCount += 1
-                window?.statusBarProgressText = it.name
-                window?.statusBarText = Localization[LangNodes.check_local_files]
-                window?.statusBarProgressValue = ((scannedCount / totalFileCount.toFloat()) * 1000).toInt()
+                window?.progress1text = it.name
+                window?.progress1value = ((scannedCount / totalFileCount.toFloat()) * 1000).toInt()
+                window?.progress2text = Localization[LangNodes.check_local_files]
             }
             LogSys.closeRangedTag()
 
@@ -230,7 +229,8 @@ class BalloonUpdateMain
             diff += OnceModeCalculator(updateDir, remoteFiles, onceOpt)()
             LogSys.closeRangedTag()
 
-            window?.statusBarText = ""
+            window?.progress1text = ""
+            window?.progress2text = ""
 
             // 输出差异信息
             LogSys.info("文件差异计算完成，旧文件: ${diff.oldFiles.size}, 旧目录: ${diff.oldFolders.size}, 新文件: ${diff.newFiles.size}, 新目录: ${diff.newFolders.size}")
@@ -263,15 +263,11 @@ class BalloonUpdateMain
                 val url = metaResponse.updateSource + relativePath
                 val file = updateDir + relativePath
                 DownloadTask(lengthExpected, modified, url, file, options.noCache)
-            }.toMutableList()
+            }.toList()
 
-            val lock = Any()
-            var committedCount = 0
             var downloadedCount = 0
-            val samplers = mutableListOf<SpeedSampler>()
 
-            // 单个线程的下载逻辑
-            fun download(task: DownloadTask, taskRow: NewWindow.TaskRow?, threadIndex: Int)
+            for ((index, task) in tasks.withIndex())
             {
                 val file = task.file
                 val url = task.url
@@ -279,16 +275,13 @@ class BalloonUpdateMain
                 val modified = task.modified
 
                 val sampler = SpeedSampler(500, 100)
-                synchronized(lock) {
-                    samplers += sampler
 
-                    committedCount += 1
-                    LogSys.debug("request($committedCount/${diff.newFiles.values.size}): ${url}, write to: ${file.path}")
-                }
+                LogSys.debug("request($index/${diff.newFiles.values.size}): ${url}, write to: ${file.path}")
+
 
 
                 HttpUtil.httpDownload(okClient, url, file, lengthExpected, options.noCache) { packageLength, received, total ->
-                    if (taskRow == null)
+                    if (window == null)
                         return@httpDownload
 
                     totalBytesDownloaded += packageLength
@@ -301,67 +294,20 @@ class BalloonUpdateMain
                     val currProgressInString = String.format("%.1f", currentProgress)
                     val totalProgressInString = String.format("%.1f", totalProgress)
 
-                    taskRow.borderText = file.name
-                    taskRow.progressBarValue = (currentProgress * 10).toInt()
-                    taskRow.labelText = convertBytes(speed) + "/s   -  $currProgressInString%"
-                    taskRow.progressBarLabel = "${convertBytes(received)} / ${convertBytes(total)}"
-                    window!!.statusBarProgressValue = (totalProgress * 10).toInt()
-                    window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}"
-                    window.statusBarText = convertBytes(samplers.sumOf { it.speed() }) + "/s"
+                    window.stateText = "正在下载: ${file.name}"
+                    window.progress1value = (currentProgress * 10).toInt()
+                    window.progress1text = convertBytes(speed) + "/s   -  $currProgressInString%"
+                    window.progress2value = (totalProgress * 10).toInt()
+                    window.progress2text = "$totalProgressInString%  -  ${downloadedCount + 1}/${diff.newFiles.values.size}"
                     window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
                 }
 
                 file.file.setLastModified(modified)
 
-                synchronized(lock) {
-                    if (window == null)
-                        LogSys.info("downloaded($downloadedCount/${diff.newFiles.values.size}): ${file.name}")
+                if (window == null)
+                    LogSys.info("downloaded($downloadedCount/${diff.newFiles.values.size}): ${file.name}")
 
-                    downloadedCount += 1
-                    samplers -= sampler
-                }
-            }
-
-            // 启动工作线程
-            val lock2 = Any()
-            val threads = if (options.downloadThreads <= 0) Runtime.getRuntime().availableProcessors() * 2 else options.downloadThreads
-            val windowTaskRows = mutableListOf<NewWindow.TaskRow>()
-            val workers = mutableListOf<Thread>()
-            var ex: Throwable? = null
-            val mainThread = Thread.currentThread()
-            for (i in 0 until threads)
-            {
-                workers += Thread {
-                    val taskRow = window?.createTaskRow()?.also { windowTaskRows.add(it) }
-                    while (synchronized(lock2) { tasks.isNotEmpty() })
-                    {
-                        val task: DownloadTask
-                        synchronized(lock2){ task = tasks.removeFirst() }
-                        try {
-                            download(task, taskRow, i)
-                        } catch (_: InterruptedIOException) { break }
-                        catch (_: InterruptedException) { break }
-                    }
-                    window?.destroyTaskRow(taskRow!!)
-                }.apply {
-                    isDaemon = true
-                    setUncaughtExceptionHandler { _, e ->
-                        ex = e
-                        mainThread.interrupt()
-                    }
-                }
-            }
-
-            // 等待所有线程完成
-            try {
-                for (worker in workers)
-                    worker.start()
-                for (worker in workers)
-                    worker.join()
-            } catch (e: InterruptedException) {
-                for (worker in workers)
-                    worker.interrupt()
-                throw ex ?: e
+                downloadedCount += 1
             }
         }
 
@@ -461,7 +407,7 @@ class BalloonUpdateMain
      * @param basedir 从哪个目录开始向上搜索
      * @return 包含.minecraft目录的父目录。如果找不到则返回Null
      */
-    fun searchDotMinecraft(basedir: FileObject): FileObject?
+    fun searchDotMinecraft(basedir: File2): File2?
     {
         try {
             if(basedir.contains(".minecraft"))
@@ -491,7 +437,7 @@ class BalloonUpdateMain
      * @throws ConfigFileNotFoundException 配置文件找不到时
      * @throws FailedToParsingException 配置文件无法解码时
      */
-    fun readConfig(externalConfigFile: FileObject): Map<String, Any>
+    fun readConfig(externalConfigFile: File2): Map<String, Any>
     {
         try {
             val content: String
@@ -528,7 +474,7 @@ class BalloonUpdateMain
                     jar.getInputStream(langFileInZip).use { content = it.readBytes().decodeToString() }
                 }
             else
-                content = (FileObject(System.getProperty("user.dir")) + "src/main/resources/lang.yml").content
+                content = (File2(System.getProperty("user.dir")) + "src/main/resources/lang.yml").content
 
             return Yaml().load(content)
         } catch (e: JSONException) {
@@ -539,13 +485,13 @@ class BalloonUpdateMain
     /**
      * 获取进程的工作目录
      */
-    fun getWorkDirectory(): FileObject
+    fun getWorkDirectory(): File2
     {
         return System.getProperty("user.dir").run {
             if(EnvUtil.isPackaged)
-                FileObject(this)
+                File2(this)
             else
-                FileObject("$this${File.separator}debug-directory").also { it.mkdirs() }
+                File2("$this${File.separator}debug-directory").also { it.mkdirs() }
         }
     }
 
@@ -553,7 +499,7 @@ class BalloonUpdateMain
      * 获取需要更新的起始目录
      * @throws UpdateDirNotFoundException 当.minecraft目录搜索不到时
      */
-    fun getUpdateDirectory(workDir: FileObject, options: GlobalOptions): FileObject
+    fun getUpdateDirectory(workDir: File2, options: GlobalOptions): File2
     {
         return if(EnvUtil.isPackaged) {
             if (options.basePath != "") EnvUtil.jarFile.parent + options.basePath
@@ -566,7 +512,7 @@ class BalloonUpdateMain
     /**
      * 获取Jar文件所在的目录
      */
-    fun getProgramDirectory(workDir: FileObject): FileObject
+    fun getProgramDirectory(workDir: File2): File2
     {
         return if(EnvUtil.isPackaged) EnvUtil.jarFile.parent else workDir
     }
@@ -579,8 +525,6 @@ class BalloonUpdateMain
         fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             val useGraphicsMode = agentArgs != "windowless" && Desktop.isDesktopSupported()
-            if (useGraphicsMode)
-                SetupSwing.init()
             BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = false, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
@@ -592,8 +536,6 @@ class BalloonUpdateMain
         fun main(args: Array<String>)
         {
             val useGraphicsMode = !(args.isNotEmpty() && args[0] == "windowless") && Desktop.isDesktopSupported()
-            if (useGraphicsMode)
-                SetupSwing.init()
             BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = true, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
@@ -603,7 +545,7 @@ class BalloonUpdateMain
         val lengthExpected: Long,
         val modified: Long,
         val url: String,
-        val file: FileObject,
+        val file: File2,
         val noCache: String?,
     )
 }

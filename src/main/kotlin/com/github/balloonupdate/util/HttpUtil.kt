@@ -46,7 +46,7 @@ object HttpUtil
     /**
      * 从HTTP服务器上下载文件（主要是大文件，二进制文件）
      */
-    fun httpDownload(client: OkHttpClient, url: String, writeTo: FileObject, lengthExpected: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
+    fun httpDownload(client: OkHttpClient, url: String, writeTo: File2, lengthExpected: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
     {
         var link = url.replace("+", "%2B")
 

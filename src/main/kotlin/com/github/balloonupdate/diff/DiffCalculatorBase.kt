@@ -1,13 +1,13 @@
 package com.github.balloonupdate.diff
 
-import com.github.balloonupdate.util.FileObject
+import com.github.balloonupdate.util.File2
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
 import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 
-typealias OnScanCallback = (file: FileObject) -> Unit
+typealias OnScanCallback = (file: File2) -> Unit
 
 /**
  * 文件差异计算器的基本类
@@ -18,7 +18,7 @@ typealias OnScanCallback = (file: FileObject) -> Unit
  * @param local 要比较的本地文件
  * @param remote 要比较的远程文件
  */
-abstract class DiffCalculatorBase(val local: FileObject, val remote: List<SimpleFileObject>, var opt: Options)
+abstract class DiffCalculatorBase(val local: File2, val remote: List<SimpleFileObject>, var opt: Options)
 {
     val base = local
     val result: Difference = Difference()
@@ -26,7 +26,7 @@ abstract class DiffCalculatorBase(val local: FileObject, val remote: List<Simple
     /**
      * 将一个文件文件或者目录标记为旧文件
      */
-    protected fun markAsOld(file: FileObject)
+    protected fun markAsOld(file: File2)
     {
         if(file.isDirectory)
         {
@@ -46,7 +46,7 @@ abstract class DiffCalculatorBase(val local: FileObject, val remote: List<Simple
     /**
      * 将一个文件文件或者目录标记为新文件
      */
-    protected fun markAsNew(node: SimpleFileObject, dir: FileObject)
+    protected fun markAsNew(node: SimpleFileObject, dir: File2)
     {
         if(node is SimpleDirectory)
         {

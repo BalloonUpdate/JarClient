@@ -8,7 +8,7 @@ import java.nio.file.Paths
 import java.security.MessageDigest
 import kotlin.io.path.pathString
 
-class FileObject
+class File2
 {
     private val _file: File
 
@@ -32,7 +32,7 @@ class FileObject
 
     val exists: Boolean get() = _file.exists()
 
-    val parent: FileObject get() = FileObject(_file.parent)
+    val parent: File2 get() = File2(_file.parent)
 
     fun mkdirs() = _file.mkdirs()
 
@@ -88,7 +88,7 @@ class FileObject
             return _file.lastModified()
         }
 
-    val files: List<FileObject> get() = _file.listFiles().map { FileObject(it) }
+    val files: List<File2> get() = _file.listFiles().map { File2(it) }
 
     val isDirty: Boolean
         get() {
@@ -118,12 +118,12 @@ class FileObject
         _file.delete()
     }
 
-    fun copy(target: FileObject)
+    fun copy(target: File2)
     {
         _file.copyRecursively(target._file, overwrite = true)
     }
 
-    fun move(target: FileObject)
+    fun move(target: File2)
     {
         copy(target)
         target.delete()
@@ -133,29 +133,29 @@ class FileObject
 
     val platformPath: String get() = _file.absolutePath
 
-    fun relativize(target: FileObject, platformize: Boolean = false): String {
+    fun relativize(target: File2, platformize: Boolean = false): String {
         return Paths.get(path).relativize(Paths.get(target.path)).pathString.run {
             if(!platformize) replace("\\", "/") else this
         }
     }
 
-    fun relativizedBy(base: FileObject, platformize: Boolean = false): String {
+    fun relativizedBy(base: File2, platformize: Boolean = false): String {
         return Paths.get(base.path).relativize(Paths.get(path)).pathString.run {
             if(!platformize) replace("\\", "/") else this
         }
     }
 
-    operator fun plus(value: String): FileObject
+    operator fun plus(value: String): File2
     {
-        return FileObject(path + File.separator + value)
+        return File2(path + File.separator + value)
     }
 
-    operator fun invoke(value: String): FileObject
+    operator fun invoke(value: String): File2
     {
         return this + value
     }
 
-    operator fun get(value: String): FileObject
+    operator fun get(value: String): File2
     {
         return this + value
     }

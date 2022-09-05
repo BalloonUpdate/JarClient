@@ -1,10 +1,10 @@
 package com.github.balloonupdate.logging
 
-import com.github.balloonupdate.util.FileObject
+import com.github.balloonupdate.util.File2
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
 
-class FileHandler(logsys: LogSys, val logFile: FileObject) : AbstractHandler(logsys)
+class FileHandler(logsys: LogSys, val logFile: File2) : AbstractHandler(logsys)
 {
     val fmt = SimpleDateFormat("MM-dd HH:mm:ss.SSS")
     var fileWriter: PrintWriter? = null

@@ -9,10 +9,10 @@ object Utils
      * 统计文件数量
      */
     @JvmStatic
-    fun countFiles(directory: FileObject): Int
+    fun countFiles(directory: File2): Int
     {
         var count = 0
-        val files: List<FileObject>
+        val files: List<File2>
 
         try {
             files = directory.files
@@ -48,7 +48,7 @@ object Utils
 
 
     @JvmStatic
-    fun walkFile(directory: FileObj, base: FileObj, callback: (dir: FileObj, path: String) -> Unit)
+    fun walkFile(directory: File2, base: File2, callback: (dir: File2, path: String) -> Unit)
     {
         for (file in directory.files)
         {
@@ -56,6 +56,19 @@ object Utils
                 callback(file, file.relativizedBy(base))
             else
                 walkFile(file, base, callback)
+        }
+    }
+
+    /**
+     * 字节转换为kb, mb, gb等单位
+     */
+    fun convertBytes(bytes: Long, b: String = "B", kb: String = "KB", mb: String = "MB", gb: String = "GB"): String
+    {
+        return when {
+            bytes < 1024 -> "${String.format("%.1f", bytes.toFloat())} $b"
+            bytes < 1024 * 1024 -> "${String.format("%.1f", (bytes / 1024f))} $kb"
+            bytes < 1024 * 1024 * 1024 -> "${String.format("%.1f", (bytes / 1024 / 1024f))} $mb"
+            else -> "${String.format("%.1f", (bytes / 1024 / 1024 / 1024f))} $gb"
         }
     }
 
