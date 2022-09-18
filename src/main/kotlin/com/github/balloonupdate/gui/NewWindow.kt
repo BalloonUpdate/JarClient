@@ -1,7 +1,7 @@
 package com.github.balloonupdate.gui
 
 import com.github.balloonupdate.event.Event
-import com.github.kasuminova.Downloader.VFlowLayout
+import com.github.kasuminova.GUI.VFlowLayout
 import java.awt.BorderLayout
 import java.awt.event.WindowEvent
 import java.awt.event.WindowListener

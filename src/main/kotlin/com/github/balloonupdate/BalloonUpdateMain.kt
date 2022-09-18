@@ -15,7 +15,7 @@ import com.github.balloonupdate.logging.FileHandler
 import com.github.balloonupdate.logging.LogSys
 import com.github.balloonupdate.util.*
 import com.github.balloonupdate.util.Utils.convertBytes
-import com.github.kasuminova.Downloader.SetupSwing
+import com.github.kasuminova.GUI.SetupSwing
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONException
