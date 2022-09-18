@@ -18,7 +18,7 @@ public class SetupSwing {
         //更新 UI
         try {
             UIManager.setLookAndFeel(new FlatAtomOneDarkContrastIJTheme());
-        } catch( Exception ex ) {
+        } catch (Exception ex) {
             System.err.println("Failed to initialize LaF");
         }
 
