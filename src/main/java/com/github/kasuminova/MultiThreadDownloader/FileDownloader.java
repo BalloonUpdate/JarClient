@@ -58,6 +58,7 @@ public class FileDownloader implements Runnable {
             public void onResponse(@NotNull Call call, @NotNull Response response) {
                 if (!(response.code() == 200)) {
                     downloadProgressComponents.progressBar.setString("HTTP 状态码不正确:" + response.code());
+                    Main.threadException = new Exception("HTTP 状态码不正确:" + response.code());
                     response.close();
                     completedFiles.getAndIncrement();
                     runningThreadCount.getAndDecrement();
@@ -107,6 +108,7 @@ public class FileDownloader implements Runnable {
                     downloadProgressComponents.progressBar.getParent().getParent().getParent().remove(downloadProgressComponents.progressBar.getParent().getParent());
                 } catch (Exception e) {
                     downloadProgressComponents.progressBar.setString(e.getLocalizedMessage());
+                    Main.threadException = e;
                 } finally {
                     try {
                         if (InputStream != null)
@@ -114,7 +116,7 @@ public class FileDownloader implements Runnable {
                         if (fos != null)
                             fos.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Main.threadException = e;
                     }
 
                     completedFiles.getAndIncrement();
@@ -126,6 +128,7 @@ public class FileDownloader implements Runnable {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 downloadProgressComponents.progressBar.setString(e.getMessage());
+                Main.threadException = e;
                 completedFiles.getAndIncrement();
                 runningThreadCount.getAndDecrement();
             }

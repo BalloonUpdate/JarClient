@@ -8,12 +8,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Main {
+    static Exception threadException;
     /**
      * 从传入的 ArrayList<DownloadObject> 中下载指定文件
      * @param downloadObjects 链接以及保存路径
      * @param maxThreads 并发数量（通常会有 1~2 的波动）
      */
-    public static void downloadFilesWithList(ArrayList<DownloadObject> downloadObjects, int maxThreads) throws InterruptedException {
+    public static void downloadFilesWithList(ArrayList<DownloadObject> downloadObjects, int maxThreads) throws Exception {
+        threadException = null;
         //主窗口
         final DownloadFrame downloadFrame = new DownloadFrame();
         //总文件数量
@@ -26,9 +28,12 @@ public class Main {
         final AtomicLong totalDownloaded = new AtomicLong(0);
         //总大小（仅计算正在下载和已下载的，位于队列中的不计入）
         final AtomicLong totalSize = new AtomicLong(0);
+        ArrayList<Thread> threadList = new ArrayList<>();
 
         for (DownloadObject downloadObject : downloadObjects) {
-            new Thread(new FileDownloader(downloadObject, downloadFrame, totalDownloaded, totalSize, runningThreadCount, completedFiles, maxThreads)).start();
+            Thread thread = new Thread(new FileDownloader(downloadObject, downloadFrame, totalDownloaded, totalSize, runningThreadCount, completedFiles, maxThreads));
+            threadList.add(thread);
+            thread.start();
         }
 
         //计时器变量
@@ -42,12 +47,20 @@ public class Main {
                     FileUtil.formatFileSizeToStr(totalSize.get())));
             if (totalSize.get() != 0) totalProgressBar.setValue((int) (double) (totalDownloaded.get() * 1000 / totalSize.get()));
             downloadFrame.setFileCountLabelText(String.format("已完成 / 总文件: %s / %s", completedFiles.get(), totalFiles));
+
         });
         timer.start();
 
         downloadFrame.showFrame();
 
         while (completedFiles.get() < totalFiles) {
+            if (threadException != null) {
+                for (Thread thread : threadList) {
+                    thread.interrupt();
+                }
+                timer.stop();
+                throw threadException;
+            }
             Thread.sleep(250);
         }
 
