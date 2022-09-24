@@ -475,7 +475,7 @@ class BalloonUpdateMain
             onceMode = (data["once_mode"]  as JSONArray).map { it as String },
             updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.json",
             updateSource = baseurl + findSource(update, update) + "/",
-            hashAlgorithm = if (data.has("supported_hashes")) (data["supported_hashes"] as String) else "sha1",
+            hashAlgorithm = if (data.has("hash_algorithm")) (data["hash_algorithm"] as String) else "sha1",
         )
     }
 
