@@ -74,6 +74,7 @@ class NewWindow
     {
         synchronized(taskRowMutex) {
             taskList.remove(taskRow.rowPanel)
+            taskList.updateUI()
         }
     }
 
