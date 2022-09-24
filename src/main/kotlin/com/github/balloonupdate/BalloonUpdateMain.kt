@@ -51,7 +51,7 @@ class BalloonUpdateMain
             // 初始化日志系统
             if (enableLogFile)
                 LogSys.addHandler(FileHandler(LogSys, progDir + (if (graphicsMode) "balloon_update.log" else "balloon_update.txt")))
-            LogSys.addHandler(ConsoleHandler(LogSys, if (graphicsMode) LogSys.LogLevel.DEBUG else LogSys.LogLevel.INFO))
+            LogSys.addHandler(ConsoleHandler(LogSys, if (EnvUtil.isPackaged) (if (graphicsMode) LogSys.LogLevel.DEBUG else LogSys.LogLevel.INFO) else LogSys.LogLevel.INFO))
             if (!hasStandaloneProgress)
                 LogSys.openRangedTag("BalloonUpdate")
 
@@ -151,10 +151,18 @@ class BalloonUpdateMain
      */
     fun task(window: NewWindow?, options: GlobalOptions, workDir: FileObject, updateDir: FileObject)
     {
+        val jvmVersion = System.getProperty("java.version")
+        val jvmVender = System.getProperty("java.vendor")
+        val osName = System.getProperty("os.name")
+        val osArch = System.getProperty("os.arch")
+        val osVersion = System.getProperty("os.version")
+
         LogSys.info("updating directory:   ${updateDir.path}")
         LogSys.info("working directory:    ${workDir.path}")
         LogSys.info("executable directory: ${if(EnvUtil.isPackaged) EnvUtil.jarFile.parent.path else "dev-mode"}")
         LogSys.info("application version:  ${EnvUtil.version} (${EnvUtil.gitCommit})")
+        LogSys.info("java virtual machine: $jvmVender $jvmVersion")
+        LogSys.info("operating system: $osName $osVersion $osArch")
 
         if (!options.quietMode)
             window?.show()
