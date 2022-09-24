@@ -1,5 +1,7 @@
 package com.github.balloonupdate.util
 
+import java.util.concurrent.atomic.AtomicLong
+
 /**
  * 网速采样
  * @param samplingPeriod 采样间隔，在采样间隔内重复提交不会改变获取到的速度
@@ -7,9 +9,9 @@ package com.github.balloonupdate.util
  */
 class SpeedSampler(val samplingPeriod: Int, firstSamplingInterval: Int)
 {
-    var last = System.currentTimeMillis() - (firstSamplingInterval - 100)
-    var bytesSinceLastSampling = 0L
-    var speedCache = 0L
+    var last = AtomicLong(System.currentTimeMillis() - (firstSamplingInterval - 100))
+    var bytesSinceLastSampling = AtomicLong(0L)
+    var speedCache = AtomicLong(0L)
 
     /**
      * 进行采样
@@ -18,15 +20,15 @@ class SpeedSampler(val samplingPeriod: Int, firstSamplingInterval: Int)
      */
     fun sample(bytes: Long): Boolean
     {
-        this.bytesSinceLastSampling += bytes
+        this.bytesSinceLastSampling.addAndGet(bytes)
 
         val now = System.currentTimeMillis()
-        if (now - last <= samplingPeriod)
+        if (now - last.get() <= samplingPeriod)
             return false
 
-        speedCache = (bytesSinceLastSampling.toDouble() / (now - last) * samplingPeriod).toLong()
-        last = now
-        bytesSinceLastSampling = 0
+        speedCache.set((bytesSinceLastSampling.toDouble() / (now - last.get()) * samplingPeriod).toLong())
+        last.set(now)
+        bytesSinceLastSampling.set(0)
         return true
     }
 
@@ -35,7 +37,7 @@ class SpeedSampler(val samplingPeriod: Int, firstSamplingInterval: Int)
      */
     fun speed(): Long
     {
-        return speedCache
+        return speedCache.get()
     }
 
 
