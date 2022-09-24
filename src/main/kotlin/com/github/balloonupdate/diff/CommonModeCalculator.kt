@@ -5,6 +5,7 @@ import com.github.balloonupdate.util.FileObject
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
+import com.github.kasuminova.Utils.HashCalculator
 import kotlin.math.abs
 
 /**
@@ -90,7 +91,7 @@ class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, op
 
         if(!isUpToDate)
         {
-            val lsha1 = l.sha1
+            val lsha1 = HashCalculator.getSHA1(l.file)
             if(lsha1 != r.hash)
             {
                 LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
