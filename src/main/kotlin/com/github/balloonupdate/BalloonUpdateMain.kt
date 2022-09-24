@@ -16,7 +16,6 @@ import com.github.balloonupdate.logging.LogSys
 import com.github.balloonupdate.util.*
 import com.github.balloonupdate.util.Utils.convertBytes
 import com.github.kasuminova.GUI.SetupSwing
-import com.github.kasuminova.Utils.HashCalculator
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONException
@@ -205,14 +204,23 @@ class BalloonUpdateMain
             var scannedCount = 0
             val totalFileCount = Utils.countFiles(updateDir)
 
+            val hashAlgorithm = when (metaResponse.hashAlgorithm) {
+                "crc32" -> DiffCalculatorBase.HashAlgorithm.CRC32
+                "md5" -> DiffCalculatorBase.HashAlgorithm.MD5
+                "sha1" -> DiffCalculatorBase.HashAlgorithm.SHA1
+                else -> DiffCalculatorBase.HashAlgorithm.SHA1
+            }
+
             val commonOpt = DiffCalculatorBase.Options(
                 patterns = metaResponse.commonMode,
                 checkModified = options.checkModified,
+                hashAlgorithm = hashAlgorithm,
             )
 
             val onceOpt = DiffCalculatorBase.Options(
                 patterns = metaResponse.onceMode,
                 checkModified = options.checkModified,
+                hashAlgorithm = hashAlgorithm,
             )
 
             // calculate the file-differences between the local and the remote
@@ -272,7 +280,7 @@ class BalloonUpdateMain
             val samplers = mutableListOf<SpeedSampler>()
 
             // 单个线程的下载逻辑
-            fun download(task: DownloadTask, taskRow: NewWindow.TaskRow?, threadIndex: Int)
+            fun download(task: DownloadTask, taskRow: NewWindow.TaskRow?)
             {
                 val file = task.file
                 val url = task.url
@@ -344,7 +352,7 @@ class BalloonUpdateMain
                         if (task == null)
                             continue
                         try {
-                            download(task, taskRow, i)
+                            download(task, taskRow)
                         } catch (_: InterruptedIOException) { break }
                         catch (_: InterruptedException) { break }
                     }
@@ -454,12 +462,13 @@ class BalloonUpdateMain
             return def
         }
 
-        return MetadataResponse().apply {
-            commonMode = (data["common_mode"] as JSONArray).map { it as String }
-            onceMode = (data["once_mode"]  as JSONArray).map { it as String }
-            updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.json"
-            updateSource = baseurl + findSource(update, update) + "/"
-        }
+        return MetadataResponse(
+            commonMode = (data["common_mode"] as JSONArray).map { it as String },
+            onceMode = (data["once_mode"]  as JSONArray).map { it as String },
+            updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.json",
+            updateSource = baseurl + findSource(update, update) + "/",
+            hashAlgorithm = if (data.has("supported_hashes")) (data["supported_hashes"] as String) else "sha1",
+        )
     }
 
     /**

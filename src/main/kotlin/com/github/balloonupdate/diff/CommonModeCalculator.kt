@@ -91,10 +91,10 @@ class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, op
 
         if(!isUpToDate)
         {
-            val lsha1 = HashCalculator.getSHA1(l.file)
-            if(lsha1 != r.hash)
+            val lhash = calculateHash(l)
+            if(lhash != r.hash)
             {
-                LogSys.debug("   "+indent+"Hash not matched: Local: " + lsha1 + "   Remote: " + r.hash)
+                LogSys.debug("   "+indent+"Hash not matched: Local: " + lhash + "   Remote: " + r.hash)
                 markAsOld(l)
                 markAsNew(r, l)
             } else if (opt.checkModified && r.modified != -1L) {
