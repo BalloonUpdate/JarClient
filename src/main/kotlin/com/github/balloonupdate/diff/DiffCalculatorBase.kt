@@ -103,7 +103,7 @@ abstract class DiffCalculatorBase(
             HashAlgorithm.CRC32 -> HashCalculator.getCRC32(file.file)
             HashAlgorithm.MD5 -> HashCalculator.getMD5(file.file)
             HashAlgorithm.SHA1 -> HashCalculator.getSHA1(file.file)
-        }.also { println(opt.hashAlgorithm) }
+        }
     }
 
     /**
