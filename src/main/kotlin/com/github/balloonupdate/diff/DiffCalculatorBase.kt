@@ -1,5 +1,6 @@
 package com.github.balloonupdate.diff
 
+import com.github.balloonupdate.data.HashAlgorithm
 import com.github.balloonupdate.util.FileObject
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
@@ -155,12 +156,4 @@ abstract class DiffCalculatorBase(
          */
         val hashAlgorithm: HashAlgorithm
     )
-
-    /**
-     * 支持的哈希算法
-     */
-    enum class HashAlgorithm
-    {
-        SHA1, CRC32, MD5
-    }
 }

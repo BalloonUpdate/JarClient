@@ -179,12 +179,12 @@ class BalloonUpdateMain
         window?.statusBarText = Localization[LangNodes.fetch_metadata]
 
         // 获取结构数据
-        val rawData = HttpUtil.httpFetch(okClient, metaResponse.updateUrl, options.noCache)
+        val rawData = HttpUtil.httpFetch(okClient, metaResponse.structureFileUrl, options.noCache)
         val remoteFiles: List<SimpleFileObject>
         try {
             remoteFiles = unserializeFileStructure(JSONArray(rawData))
         } catch (e: JSONException) {
-            throw FailedToParsingException("结构文件请求", "json", "${metaResponse.updateUrl}\n${e.message}")
+            throw FailedToParsingException("结构文件请求", "json", "${metaResponse.structureFileUrl}\n${e.message}")
         }
 
         // 使用版本缓存
@@ -212,23 +212,16 @@ class BalloonUpdateMain
             var scannedCount = 0
             val totalFileCount = Utils.countFiles(updateDir)
 
-            val hashAlgorithm = when (metaResponse.hashAlgorithm) {
-                "crc32" -> DiffCalculatorBase.HashAlgorithm.CRC32
-                "md5" -> DiffCalculatorBase.HashAlgorithm.MD5
-                "sha1" -> DiffCalculatorBase.HashAlgorithm.SHA1
-                else -> DiffCalculatorBase.HashAlgorithm.SHA1
-            }
-
             val commonOpt = DiffCalculatorBase.Options(
                 patterns = metaResponse.commonMode,
                 checkModified = options.checkModified,
-                hashAlgorithm = hashAlgorithm,
+                hashAlgorithm = metaResponse.hashAlgorithm,
             )
 
             val onceOpt = DiffCalculatorBase.Options(
                 patterns = metaResponse.onceMode,
                 checkModified = options.checkModified,
-                hashAlgorithm = hashAlgorithm,
+                hashAlgorithm = metaResponse.hashAlgorithm,
             )
 
             // calculate the file-differences between the local and the remote
@@ -277,7 +270,7 @@ class BalloonUpdateMain
             val tasks = diff.newFiles.map { (relativePath, lm) ->
                 val lengthExpected = lm.first
                 val modified = lm.second
-                val url = metaResponse.updateSource + relativePath
+                val url = metaResponse.assetsDirUrl + relativePath
                 val file = updateDir + relativePath
                 DownloadTask(lengthExpected, modified, url, file, options.noCache)
             }.toMutableList()
@@ -441,16 +434,6 @@ class BalloonUpdateMain
      */
     fun requestIndex(client: OkHttpClient, url: String, noCache: String?): MetadataResponse
     {
-        val baseurl = url.substring(0, url.lastIndexOf('/') + 1)
-        val response = HttpUtil.httpFetch(client, url, noCache)
-        val data: JSONObject
-        try {
-            data = JSONObject(response)
-        } catch (e: JSONException) {
-            throw FailedToParsingException("元数据文件请求", "json", "$url\n${e.message}")
-        }
-        val update = data["update"] as? String ?: "res"
-
         fun findSource(text: String, def: String): String
         {
             if(text.indexOf('?') != -1)
@@ -470,12 +453,35 @@ class BalloonUpdateMain
             return def
         }
 
+        val response = HttpUtil.httpFetch(client, url, noCache)
+        val data: JSONObject
+        try {
+            data = JSONObject(response)
+        } catch (e: JSONException) {
+            throw FailedToParsingException("元数据文件请求", "json", "$url\n${e.message}")
+        }
+
+        val ha = if (data.has("hash_algorithm")) (data["hash_algorithm"] as String) else "sha1"
+        val hashAlgorithm = HashAlgorithm.FromString(ha, HashAlgorithm.SHA1)
+
+        val baseurl = url.substring(0, url.lastIndexOf('/') + 1)
+        val assetDir = data["update"] as? String ?: "res"
+        val commonMode = (data["common_mode"] as JSONArray).map { it as String }
+        val onceMode = (data["once_mode"]  as JSONArray).map { it as String }
+        val structureFileName = when (hashAlgorithm) {
+            HashAlgorithm.SHA1 -> "${assetDir}.json"
+            HashAlgorithm.MD5 -> "${assetDir}_md5.json"
+            HashAlgorithm.CRC32 -> "${assetDir}_crc32.json"
+        }
+        val structureFileUrl = baseurl + if (assetDir.indexOf("?") != -1) assetDir else structureFileName
+        val assetsDirUrl = baseurl + findSource(assetDir, assetDir) + "/"
+
         return MetadataResponse(
-            commonMode = (data["common_mode"] as JSONArray).map { it as String },
-            onceMode = (data["once_mode"]  as JSONArray).map { it as String },
-            updateUrl = baseurl + if (update.indexOf("?") != -1) update else "$update.json",
-            updateSource = baseurl + findSource(update, update) + "/",
-            hashAlgorithm = if (data.has("hash_algorithm")) (data["hash_algorithm"] as String) else "sha1",
+            commonMode = commonMode,
+            onceMode = onceMode,
+            structureFileUrl = structureFileUrl,
+            assetsDirUrl = assetsDirUrl,
+            hashAlgorithm = hashAlgorithm,
         )
     }
 
