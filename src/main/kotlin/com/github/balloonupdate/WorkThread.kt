@@ -177,15 +177,15 @@ class WorkThread(
 
                     taskRow.borderText = file.name
                     taskRow.progressBarValue = (currentProgress * 10).toInt()
-                    taskRow.labelText = Utils.convertBytes(speed) + "/s   -  $currProgressInString%"
-                    taskRow.progressBarLabel = "${Utils.convertBytes(received)} / ${Utils.convertBytes(total)}"
+//                    taskRow.labelText = ""
+                    taskRow.progressBarLabel = "${Utils.convertBytes(received)} / ${Utils.convertBytes(total)}   -   " +Utils.convertBytes(speed) + "/s"
 
                     val toatalSpeed: Long
                     synchronized(lock) { toatalSpeed = samplers.sumOf { it.speed() } }
 
                     window!!.statusBarProgressValue = (totalProgress * 10).toInt()
-                    window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}"
-                    window.statusBarText = Utils.convertBytes(toatalSpeed) + "/s"
+                    window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}   -   " + Utils.convertBytes(toatalSpeed) + "/s"
+                    window.statusBarText = "总进度"
                     window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
                 }, {
                     totalBytesDownloaded -= localDownloadedBytes
