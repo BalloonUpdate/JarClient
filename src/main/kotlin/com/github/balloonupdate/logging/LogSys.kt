@@ -34,7 +34,7 @@ object LogSys
                     level = level,
                     tag = tag,
                     message = message,
-                    newLineIndent = false,
+                    newLineIndent = true,
                     rangedTags = rangedTags,
                     newLine = newLine,
                 )
