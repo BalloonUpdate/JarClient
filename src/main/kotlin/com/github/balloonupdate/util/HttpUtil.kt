@@ -109,6 +109,8 @@ object HttpUtil
             } catch (e: SocketTimeoutException) {
                 throw ConnectionTimeoutException(link)
             }
+
+            Thread.sleep(1000)
         }
 
         if (ex != null)
