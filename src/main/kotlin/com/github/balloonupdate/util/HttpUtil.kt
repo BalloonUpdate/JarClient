@@ -35,11 +35,11 @@ object HttpUtil
                 throw HttpResponseStatusCodeException(r.code, link, body)
             }
         } catch (e: ConnectException) {
-            throw ConnectionRejectedException(link)
+            throw ConnectionRejectedException(link, e.message ?: "")
         } catch (e: SocketException) {
-            throw ConnectionInterruptedException(link)
+            throw ConnectionInterruptedException(link, e.message ?: "")
         } catch (e: SocketTimeoutException) {
-            throw ConnectionTimeoutException(link)
+            throw ConnectionTimeoutException(link, e.message ?: "")
         }
     }
 
@@ -103,11 +103,11 @@ object HttpUtil
                 ex = null
                 break
             } catch (e: ConnectException) {
-                ex = ConnectionInterruptedException(link)
+                ex = ConnectionInterruptedException(link, e.message ?: "")
             } catch (e: SocketException) {
-                ex = ConnectionRejectedException(link)
+                ex = ConnectionRejectedException(link, e.message ?: "")
             } catch (e: SocketTimeoutException) {
-                throw ConnectionTimeoutException(link)
+                throw ConnectionTimeoutException(link, e.message ?: "")
             }
 
             Thread.sleep(1000)
