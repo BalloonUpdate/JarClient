@@ -62,8 +62,7 @@ data class GlobalOptions (
      * 下载文件时使用的线程数，设置为0时会自动计算
      */
     val downloadThreads: Int,
-
-    ) {
+) {
     companion object {
         @JvmStatic
         fun CreateFromMap(map: Map<String, Any>): GlobalOptions
@@ -80,7 +79,7 @@ data class GlobalOptions (
                 httpConnectTimeout = getOption<Int>(map, "http-connect-timeout") ?: 5000,
                 httpReadTimeout = getOption<Int>(map, "http-read-timeout") ?: 10000,
                 httpWriteTimeout = getOption<Int>(map, "http-write-timeout") ?: 5000,
-                downloadThreads = getOption<Int>(map, "download-threads") ?: 0,
+                downloadThreads = getOption<Int>(map, "download-threads") ?: 4,
             )
         }
 

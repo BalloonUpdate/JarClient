@@ -204,7 +204,7 @@ class WorkThread(
 
             // 启动工作线程
             val lock2 = Any()
-            val threads = if (options.downloadThreads <= 0) Runtime.getRuntime().availableProcessors() * 2 else options.downloadThreads
+            val threads = options.downloadThreads
             val windowTaskRows = mutableListOf<NewWindow.TaskRow>()
             val workers = mutableListOf<Thread>()
             var ex: Throwable? = null
