@@ -6,7 +6,7 @@ data class GlobalOptions (
     /**
      * 服务端index.json文件的URL，用来获取服务端的文件并计算差异
      */
-    val server: String,
+    val server: List<String>,
 
     /**
      * 更新完成后是否自动关闭窗口并退出程序
@@ -73,8 +73,12 @@ data class GlobalOptions (
         @JvmStatic
         fun CreateFromMap(map: Map<String, Any>): GlobalOptions
         {
+            val serverAsList = getOption<List<String>>(map, "server")
+            val serverAsString = getOption<String>(map, "server")
+            val server = serverAsList ?: listOf(serverAsString ?: throw ConfigFieldException("server"))
+
             return GlobalOptions(
-                server = getOption<String>(map, "server") ?: throw ConfigFieldException("server"),
+                server = server,
                 autoExit = getOption<Boolean>(map, "auto-exit") ?: false,
                 basePath = getOption<String>(map, "base-path") ?: "",
                 versionCache = getOption<String>(map, "version-cache") ?: "",

@@ -46,13 +46,8 @@ class WorkThread(
         window?.statusBarText = Localization[LangNodes.fetch_metadata]
 
         // 获取结构数据
-        val rawData = HttpUtil.httpFetch(okClient, metaResponse.structureFileUrl, options.noCache)
-        val remoteFiles: List<SimpleFileObject>
-        try {
-            remoteFiles = unserializeFileStructure(JSONArray(rawData))
-        } catch (e: JSONException) {
-            throw FailedToParsingException("结构文件请求", "json", "${metaResponse.structureFileUrl}\n${e.message}")
-        }
+        val rawData = HttpUtil.httpFetchJsonMutiple(okClient, metaResponse.structureFileUrls, options.noCache, "结构文件请求", false).second!!
+        val remoteFiles: List<SimpleFileObject> =  unserializeFileStructure(JSONArray(rawData))
 
         // 使用版本缓存
         var isVersionOutdate = true
@@ -63,7 +58,7 @@ class WorkThread(
             versionFile.makeParentDirs()
             isVersionOutdate = if(!versionFile.exists) true else {
                 val versionCached = versionFile.content
-                val versionRecieved = Utils.sha1(rawData)
+                val versionRecieved = Utils.sha1(rawData.toString(0))
                 versionCached != versionRecieved
             }
         }
@@ -137,9 +132,9 @@ class WorkThread(
             val tasks = diff.newFiles.map { (relativePath, lm) ->
                 val lengthExpected = lm.first
                 val modified = lm.second
-                val url = metaResponse.assetsDirUrl + relativePath
+                val urls = metaResponse.assetsDirUrls.map { it + relativePath }
                 val file = updateDir + relativePath
-                DownloadTask(lengthExpected, modified, url, file, options.noCache)
+                DownloadTask(lengthExpected, modified, urls, file, options.noCache)
             }.toMutableList()
 
             val lock = Any()
@@ -151,7 +146,7 @@ class WorkThread(
             fun download(task: DownloadTask, taskRow: NewWindow.TaskRow?)
             {
                 val file = task.file
-                val url = task.url
+                val urls = task.urls
                 val lengthExpected = task.lengthExpected
                 val modified = task.modified
 
@@ -160,14 +155,17 @@ class WorkThread(
                     samplers += sampler
 
                     committedCount += 1
-                    LogSys.debug("request($committedCount/${diff.newFiles.values.size}): ${url}, write to: ${file.path}")
+                    LogSys.debug("request($committedCount/${diff.newFiles.values.size}): ${urls.joinToString()}, write to: ${file.path}")
                 }
 
-                HttpUtil.httpDownload(okClient, url, file, lengthExpected, options.noCache) { packageLength, received, total ->
+                var localDownloadedBytes: Long = 0
+
+                HttpUtil.httpDownloadMutiple(okClient, urls, file, lengthExpected, options.noCache, { packageLength, received, total ->
                     if (taskRow == null)
-                        return@httpDownload
+                        return@httpDownloadMutiple
 
                     totalBytesDownloaded += packageLength
+                    localDownloadedBytes += packageLength
                     val currentProgress = received / total.toFloat() * 100
                     val totalProgress = totalBytesDownloaded / totalBytes.toFloat() * 100
 
@@ -189,7 +187,9 @@ class WorkThread(
                     window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}"
                     window.statusBarText = Utils.convertBytes(toatalSpeed) + "/s"
                     window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
-                }
+                }, {
+                    totalBytesDownloaded -= localDownloadedBytes
+                })
 
                 file.file.setLastModified(modified)
 
@@ -249,7 +249,7 @@ class WorkThread(
 
         // 更新版本缓存文件
         if(options.versionCache.isNotEmpty())
-            versionFile.content = Utils.sha1(rawData)
+            versionFile.content = Utils.sha1(rawData.toString(0))
 
         // 显示更新小结
         if(window != null)
@@ -318,7 +318,7 @@ class WorkThread(
     /**
      * 发起http请求获取index.json的内容并解析
      */
-    fun requestIndex(client: OkHttpClient, url: String, noCache: String?): MetadataResponse
+    fun requestIndex(client: OkHttpClient, urls: List<String>, noCache: String?): MetadataResponse
     {
         fun findSource(text: String, def: String): String
         {
@@ -339,34 +339,37 @@ class WorkThread(
             return def
         }
 
-        val response = HttpUtil.httpFetch(client, url, noCache)
-        val data: JSONObject
-        try {
-            data = JSONObject(response)
-        } catch (e: JSONException) {
-            throw FailedToParsingException("元数据文件请求", "json", "$url\n${e.message}")
-        }
+        val meta = HttpUtil.httpFetchJsonMutiple(client, urls, noCache, "元数据文件请求", true).first!!
 
-        val ha = if (data.has("hash_algorithm")) (data["hash_algorithm"] as String) else "sha1"
+        val ha = if (meta.has("hash_algorithm")) (meta["hash_algorithm"] as String) else "sha1"
         val hashAlgorithm = HashAlgorithm.FromString(ha, HashAlgorithm.SHA1)
+        val commonMode = (meta["common_mode"] as JSONArray).map { it as String }
+        val onceMode = (meta["once_mode"]  as JSONArray).map { it as String }
 
-        val baseurl = url.substring(0, url.lastIndexOf('/') + 1)
-        val assetDir = data["update"] as? String ?: "res"
-        val commonMode = (data["common_mode"] as JSONArray).map { it as String }
-        val onceMode = (data["once_mode"]  as JSONArray).map { it as String }
-        val structureFileName = when (hashAlgorithm) {
-            HashAlgorithm.SHA1 -> "${assetDir}.json"
-            HashAlgorithm.MD5 -> "${assetDir}_md5.json"
-            HashAlgorithm.CRC32 -> "${assetDir}_crc32.json"
+        val structureFileUrls = mutableListOf<String>()
+        val assetsDirUrls = mutableListOf<String>()
+
+        for (url in urls)
+        {
+            val baseurl = url.substring(0, url.lastIndexOf('/') + 1)
+            val assetDir = meta["update"] as? String ?: "res"
+            val structureFileName = when (hashAlgorithm) {
+                HashAlgorithm.SHA1 -> "${assetDir}.json"
+                HashAlgorithm.MD5 -> "${assetDir}_md5.json"
+                HashAlgorithm.CRC32 -> "${assetDir}_crc32.json"
+            }
+            val structureFileUrl = baseurl + if (assetDir.indexOf("?") != -1) assetDir else structureFileName
+            val assetsDirUrl = baseurl + findSource(assetDir, assetDir) + "/"
+
+            structureFileUrls += structureFileUrl
+            assetsDirUrls += assetsDirUrl
         }
-        val structureFileUrl = baseurl + if (assetDir.indexOf("?") != -1) assetDir else structureFileName
-        val assetsDirUrl = baseurl + findSource(assetDir, assetDir) + "/"
 
         return MetadataResponse(
             commonMode = commonMode,
             onceMode = onceMode,
-            structureFileUrl = structureFileUrl,
-            assetsDirUrl = assetsDirUrl,
+            structureFileUrls = structureFileUrls,
+            assetsDirUrls = assetsDirUrls,
             hashAlgorithm = hashAlgorithm,
         )
     }

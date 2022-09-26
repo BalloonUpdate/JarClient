@@ -1,12 +1,13 @@
 package com.github.balloonupdate.util
 
-import com.github.balloonupdate.exception.ConnectionRejectedException
-import com.github.balloonupdate.exception.ConnectionInterruptedException
-import com.github.balloonupdate.exception.ConnectionTimeoutException
-import com.github.balloonupdate.exception.HttpResponseStatusCodeException
+import com.github.balloonupdate.exception.*
 import com.github.balloonupdate.logging.LogSys
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
+import sun.rmi.runtime.Log
 import java.io.FileOutputStream
 import java.net.ConnectException
 import java.net.SocketException
@@ -15,9 +16,68 @@ import java.net.SocketTimeoutException
 object HttpUtil
 {
     /**
-     * 从HTTP服务器上获取文件内容（主要是小文件）
+     * 多可用源版本的httpFetch
      */
-    fun httpFetch(client: OkHttpClient, url: String, noCache: String?): String
+    fun httpFetchJsonMutiple(client: OkHttpClient, urls: List<String>, noCache: String?, description: String, parseAsJsonObject: Boolean): Pair<JSONObject?, JSONArray?>
+    {
+        var ex: Exception? = null
+
+        for (url in urls)
+        {
+            ex = try {
+                return httpFetchJson(client, url, noCache, description, parseAsJsonObject)
+            } catch (e: ConnectionRejectedException) { e }
+            catch (e: ConnectionInterruptedException) { e }
+            catch (e: ConnectionTimeoutException) { e }
+
+            if (urls.size > 1)
+                LogSys.error(ex!!.toString())
+        }
+
+        throw ex!!
+    }
+
+    /**
+     * 多可用源版本的httpDownloadMutiple
+     */
+    fun httpDownloadMutiple(
+        client: OkHttpClient,
+        urls: List<String>,
+        writeTo: FileObject,
+        lengthExpected: Long,
+        noCache: String?,
+        onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit,
+        onSourceFallback: () -> Unit,
+    ) {
+        var ex: Exception? = null
+
+        for (url in urls)
+        {
+            ex = try {
+                return httpDownload(client, url, writeTo, lengthExpected, noCache, onProgress)
+            } catch (e: ConnectionRejectedException) { e }
+            catch (e: ConnectionInterruptedException) { e }
+            catch (e: ConnectionTimeoutException) { e }
+
+            onSourceFallback()
+
+            if (urls.size > 1)
+                LogSys.error(ex!!.toString())
+        }
+
+        throw ex!!
+    }
+
+    /**
+     * 从HTTP服务器上获取Json文件
+     * @param client OkHttpClient客户端
+     * @param url 要获取的URL
+     * @param noCache 是否使用无缓存模式
+     * @param description 这个文件的描述
+     * @param parseAsJsonObject 是否解析成JsonObject对象，或者是JsonArray对象
+     * @return 解析好的JsonObject对象，或者是JsonArray对象
+     */
+    fun httpFetchJson(client: OkHttpClient, url: String, noCache: String?, description: String, parseAsJsonObject: Boolean): Pair<JSONObject?, JSONArray?>
     {
         var link = url
 
@@ -28,11 +88,19 @@ object HttpUtil
         LogSys.debug("http request on $link")
         try {
             client.newCall(req).execute().use { r ->
-                if(r.isSuccessful)
-                    return r.body!!.string()
+                if(!r.isSuccessful)
+                {
+                    val body = r.body?.string()?.run { if(length> 300) substring(0, 300) + "\n..." else this }
+                    throw HttpResponseStatusCodeException(r.code, link, body)
+                }
 
-                val body = r.body?.string()?.run { if(length> 300) substring(0, 300) + "\n..." else this }
-                throw HttpResponseStatusCodeException(r.code, link, body)
+                val body = r.body!!.string()
+
+                try {
+                    return if (parseAsJsonObject) Pair(JSONObject(body), null) else Pair(null, JSONArray(body))
+                } catch (e: JSONException) {
+                    throw FailedToParsingException(description, "json", "$url ${e.message}")
+                }
             }
         } catch (e: ConnectException) {
             throw ConnectionRejectedException(link, e.message ?: "")
@@ -46,8 +114,14 @@ object HttpUtil
     /**
      * 从HTTP服务器上下载文件（主要是大文件，二进制文件）
      */
-    fun httpDownload(client: OkHttpClient, url: String, writeTo: FileObject, lengthExpected: Long, noCache: String?, onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit)
-    {
+    fun httpDownload(
+        client: OkHttpClient,
+        url: String,
+        writeTo: FileObject,
+        lengthExpected: Long,
+        noCache: String?,
+        onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit
+    ) {
         var link = url.replace("+", "%2B")
 
         if(noCache != null)
