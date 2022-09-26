@@ -52,6 +52,10 @@ class BalloonUpdateMain
 
             Localization.init(readLangs())
 
+            // 应用主题
+            if (graphicsMode && !options.disableTheme)
+                SetupSwing.init()
+
             // 初始化UI
             val window = if (graphicsMode) NewWindow() else null
 //            val window: MainWin? = null
@@ -261,8 +265,6 @@ class BalloonUpdateMain
         fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             val useGraphicsMode = agentArgs != "windowless" && Desktop.isDesktopSupported()
-            if (useGraphicsMode)
-                SetupSwing.init()
             BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = false, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
@@ -274,8 +276,6 @@ class BalloonUpdateMain
         fun main(args: Array<String>)
         {
             val useGraphicsMode = !(args.isNotEmpty() && args[0] == "windowless") && Desktop.isDesktopSupported()
-            if (useGraphicsMode)
-                SetupSwing.init()
             BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = true, externalConfigFile = null, enableLogFile = true)
             LogSys.info("finished!")
         }
