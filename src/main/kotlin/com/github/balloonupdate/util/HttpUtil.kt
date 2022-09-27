@@ -155,22 +155,23 @@ object HttpUtil
         {
             try {
                 client.newCall(req).execute().use { r ->
-                    if(r.isSuccessful)
-                    {
-                        r.body!!.byteStream().use { input ->
-                            FileOutputStream(writeTo.path).use { output ->
-                                var bytesReceived: Long = 0
-                                var len: Int
-                                val buffer = ByteArray(bufferLen(lengthExpected))
-                                while (input.read(buffer).also { len = it; bytesReceived += it } != -1)
-                                {
-                                    output.write(buffer, 0, len)
-                                    onProgress(len.toLong(), bytesReceived, lengthExpected)
-                                }
+                    if(!r.isSuccessful)
+                        throw HttpResponseStatusCodeException(r.code, link, r.body?.string())
+
+                    r.body!!.byteStream().use { input ->
+                        FileOutputStream(writeTo.path).use { output ->
+                            var bytesReceived: Long = 0
+                            var len: Int
+                            val buffer = ByteArray(bufferLen(lengthExpected))
+                            while (input.read(buffer).also { len = it; bytesReceived += it } != -1)
+                            {
+                                output.write(buffer, 0, len)
+                                val t = System.currentTimeMillis()
+                                onProgress(len.toLong(), bytesReceived, lengthExpected)
+                                val e = System.currentTimeMillis() - t;
+//                                println(e)
                             }
                         }
-                    } else {
-                        throw HttpResponseStatusCodeException(r.code, link, r.body?.string())
                     }
                 }
                 ex = null
@@ -180,8 +181,12 @@ object HttpUtil
             } catch (e: SocketException) {
                 ex = ConnectionRejectedException(link, e.message ?: "")
             } catch (e: SocketTimeoutException) {
-                throw ConnectionTimeoutException(link, e.message ?: "")
+                ex = ConnectionTimeoutException(link, e.message ?: "")
             }
+
+            LogSys.warn("")
+            LogSys.warn(ex.toString())
+            LogSys.warn("retrying $retries ...")
 
             Thread.sleep(1000)
         }
