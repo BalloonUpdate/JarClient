@@ -33,9 +33,9 @@ class WorkThread(
             window?.show()
 
         val okClient = OkHttpClient.Builder()
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(5, TimeUnit.SECONDS).build()
+            .connectTimeout(options.httpConnectTimeout.toLong(), TimeUnit.MILLISECONDS)
+            .readTimeout(options.httpReadTimeout.toLong(), TimeUnit.MILLISECONDS)
+            .writeTimeout(options.httpWriteTimeout.toLong(), TimeUnit.MILLISECONDS).build()
 
         // 从服务器获取元信息
         val metaResponse = requestIndex(okClient, options.server, options.noCache)
