@@ -168,10 +168,7 @@ object HttpUtil
                             while (input.read(buffer).also { len = it; bytesReceived += it } != -1)
                             {
                                 output.write(buffer, 0, len)
-                                val t = System.currentTimeMillis()
                                 onProgress(len.toLong(), bytesReceived, lengthExpected)
-                                val e = System.currentTimeMillis() - t;
-//                                println(e)
                             }
                         }
                     }

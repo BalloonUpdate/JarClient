@@ -125,6 +125,7 @@ class WorkThread(
             var totalBytesDownloaded: Long = 0
             var totalBytes: Long = 0
             diff.newFiles.values.forEach { totalBytes += it.first } // calculate the total bytes to be downloaded
+            window?.statusBarText = "总进度"
 
             // 生成下载任务
             val tasks = diff.newFiles.map { (relativePath, lm) ->
@@ -158,7 +159,9 @@ class WorkThread(
 
                 var localDownloadedBytes: Long = 0
 
-                HttpUtil.httpDownloadMutiple(okClient, urls, file, lengthExpected, options.noCache, { packageLength, received, total ->
+                var time = System.currentTimeMillis()
+
+                HttpUtil.httpDownloadMutiple(okClient, urls, file, lengthExpected, options.noCache, options.retryTimers, { packageLength, received, total ->
                     if (taskRow == null)
                         return@httpDownloadMutiple
 
@@ -170,7 +173,12 @@ class WorkThread(
                     sampler.sample(packageLength)
                     val speed = sampler.speed()
 
-                    val currProgressInString = String.format("%.1f", currentProgress)
+                    // 每隔200ms更新一次ui
+                    if (System.currentTimeMillis() - time < 200)
+                        return@httpDownloadMutiple
+                    time = System.currentTimeMillis()
+
+//                    val currProgressInString = String.format("%.1f", currentProgress)
                     val totalProgressInString = String.format("%.1f", totalProgress)
 
                     taskRow.borderText = file.name
@@ -183,7 +191,6 @@ class WorkThread(
 
                     window!!.statusBarProgressValue = (totalProgress * 10).toInt()
                     window.statusBarProgressText = "$totalProgressInString%  -  ${downloadedCount}/${diff.newFiles.values.size}   -   " + Utils.convertBytes(toatalSpeed) + "/s"
-                    window.statusBarText = "总进度"
                     window.titleText = Localization[LangNodes.window_title_downloading, "PERCENT", totalProgressInString]
                 }, {
                     totalBytesDownloaded -= localDownloadedBytes
