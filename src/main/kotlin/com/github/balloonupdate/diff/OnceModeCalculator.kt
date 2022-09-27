@@ -1,7 +1,7 @@
 package com.github.balloonupdate.diff
 
 import com.github.balloonupdate.logging.LogSys
-import com.github.balloonupdate.util.FileObject
+import com.github.balloonupdate.util.File2
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
@@ -14,7 +14,7 @@ import com.github.balloonupdate.data.SimpleFileObject
  * 之后除非这个文件夹被删除，否则不会再进行下载任何相关文件
  * 顺便，此模式也不具有创建空文件夹的功能
  */
-class OnceModeCalculator (local: FileObject, remote: List<SimpleFileObject>, opt: Options)
+class OnceModeCalculator (local: File2, remote: List<SimpleFileObject>, opt: Options)
     : DiffCalculatorBase(local, remote, opt)
 {
     override fun compare(onScan: OnScanCallback?)
@@ -29,9 +29,9 @@ class OnceModeCalculator (local: FileObject, remote: List<SimpleFileObject>, opt
      * @param onScan 扫描回调，用于报告计算进度
      */
     private fun findOutNews(
-        local: FileObject,
+        local: File2,
         remote: List<SimpleFileObject>,
-        base: FileObject,
+        base: File2,
         onScan: OnScanCallback?,
         indent: String =""
     ) {

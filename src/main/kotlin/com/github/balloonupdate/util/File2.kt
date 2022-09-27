@@ -1,3 +1,4 @@
+@file:JvmName("File2")
 package com.github.balloonupdate.util
 
 import java.io.File
@@ -6,57 +7,61 @@ import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.nio.file.Paths
 import java.security.MessageDigest
+import java.util.zip.CRC32
 import kotlin.io.path.pathString
 
-class FileObject
+class File2 : Iterable<File2>
 {
-    private val _file: File
+    var file: File
 
-    constructor(file: String)
-    {
-        this._file = File(file)
-    }
+    constructor(file: String): this(File(file))
 
     constructor(file: File)
     {
-        this._file = file.absoluteFile
+        this.file = file.absoluteFile
     }
 
-    val file: File get() = _file
+    @get:JvmName("getRawFile")
+    val _file: File get() = file
 
-    val name: String get() = _file.name
+    @get:JvmName("getName")
+    val name: String get() = file.name
 
-    val isDirectory: Boolean get() = _file.isDirectory
+    @get:JvmName("isDirectory")
+    val isDirectory: Boolean get() = file.isDirectory
 
-    val isFile: Boolean get() = _file.isFile
+    @get:JvmName("isFile")
+    val isFile: Boolean get() = file.isFile
 
-    val exists: Boolean get() = _file.exists()
+    @get:JvmName("exists")
+    val exists: Boolean get() = file.exists()
 
-    val parent: FileObject get() = FileObject(_file.parent)
+    val parent: File2 get() = File2(file.parent)
 
-    fun mkdirs() = _file.mkdirs()
+    fun mkdirs() = file.mkdirs()
 
     fun makeParentDirs() = parent.mkdirs()
 
-    fun rename(newName: String) = _file.renameTo(File(newName))
+    fun rename(newName: String) = file.renameTo(File(newName))
 
     fun touch(fileContent: String? =null)
     {
         content = fileContent ?: ""
     }
 
+    @get:JvmName("getContent")
     var content: String
         get() {
             if(!exists)
                 throw FileNotFoundException(path)
-            FileInputStream(_file).use {
+            FileInputStream(file).use {
                 return it.readBytes().decodeToString()
             }
         }
         set(value) {
             if(!exists)
-                _file.createNewFile()
-            FileOutputStream(_file).use {
+                file.createNewFile()
+            FileOutputStream(file).use {
                 it.write(value.encodeToByteArray())
             }
         }
@@ -64,8 +69,8 @@ class FileObject
     fun append(content: String)
     {
         if(!exists)
-            _file.createNewFile()
-        FileOutputStream(_file, true).use {
+            file.createNewFile()
+        FileOutputStream(file, true).use {
             it.write(content.encodeToByteArray())
         }
     }
@@ -76,7 +81,7 @@ class FileObject
                 throw FileNotFoundException(path)
             if(isDirectory)
                 throw FileNotFoundException("is not a file: $path")
-            return _file.length()
+            return file.length()
         }
 
     val modified: Long
@@ -85,11 +90,12 @@ class FileObject
                 throw FileNotFoundException(path)
             if(isDirectory)
                 throw FileNotFoundException("is not a file: $path")
-            return _file.lastModified()
+            return file.lastModified()
         }
 
-    val files: List<FileObject> get() = _file.listFiles().map { FileObject(it) }
+    val files: List<File2> get() = file.listFiles().map { File2(it) }
 
+    @get:JvmName("isDirty")
     val isDirty: Boolean
         get() {
             if(!exists)
@@ -115,15 +121,15 @@ class FileObject
         if(isDirectory)
             for (f in files)
                 f.delete()
-        _file.delete()
+        file.delete()
     }
 
-    fun copy(target: FileObject)
+    fun copy(target: File2)
     {
-        _file.copyRecursively(target._file, overwrite = true)
+        file.copyRecursively(target.file, overwrite = true)
     }
 
-    fun move(target: FileObject)
+    fun move(target: File2)
     {
         copy(target)
         target.delete()
@@ -131,31 +137,36 @@ class FileObject
 
     val path: String get() = platformPath.replace("\\", "/")
 
-    val platformPath: String get() = _file.absolutePath
+    val platformPath: String get() = file.absolutePath
 
-    fun relativize(target: FileObject, platformize: Boolean = false): String {
+    fun relativize(target: File2, platformize: Boolean = false): String {
         return Paths.get(path).relativize(Paths.get(target.path)).pathString.run {
             if(!platformize) replace("\\", "/") else this
         }
     }
 
-    fun relativizedBy(base: FileObject, platformize: Boolean = false): String {
+    fun relativizedBy(base: File2, platformize: Boolean = false): String {
         return Paths.get(base.path).relativize(Paths.get(path)).pathString.run {
             if(!platformize) replace("\\", "/") else this
         }
     }
 
-    operator fun plus(value: String): FileObject
+    override fun iterator(): Iterator<File2>
     {
-        return FileObject(path + File.separator + value)
+        return files.iterator()
     }
 
-    operator fun invoke(value: String): FileObject
+    operator fun plus(value: String): File2
+    {
+        return File2(path + File.separator + value)
+    }
+
+    operator fun invoke(value: String): File2
     {
         return this + value
     }
 
-    operator fun get(value: String): FileObject
+    operator fun get(value: String): File2
     {
         return this + value
     }
@@ -169,36 +180,55 @@ class FileObject
 
     val md5: String get() = hash("MD5")
 
-    private fun hash(method: String): String
-    {
-        val bufferLen = { filelen: Long ->
-            val kb = 1024
-            val mb = 1024 * 1024
-            val gb = 1024 * 1024 * 1024
-            when {
-                filelen < 1 * mb -> 8 * kb
-                filelen < 2 * mb -> 16 * kb
-                filelen < 4 * mb -> 32 * kb
-                filelen < 8 * mb -> 64 * kb
-                filelen < 16 * mb -> 256 * kb
-                filelen < 32 * mb -> 512 * kb
-                filelen < 64 * mb -> 1 * mb
-                filelen < 128 * mb -> 2 * mb
-                filelen < 256 * mb -> 4 * mb
-                filelen < 512 * mb -> 8 * mb
-                filelen < 1 * gb -> 16 * mb
-                else -> 32 * mb
-            }
+    val crc32: String get() {
+        val crc32calculator = CRC32()
+        FileInputStream(file).use {
+            var len = 0
+            val buf = ByteArray(chooseBufferLength(length))
+            while (it.read(buf).also { len = it } != -1)
+                crc32calculator.update(buf, 0, len)
         }
 
+        val value = crc32calculator.value
+        val array = ByteArray(4)
+        array[3] = (value shr (8 * 0) and 0xFF).toByte()
+        array[2] = (value shr (8 * 1) and 0xFF).toByte()
+        array[1] = (value shr (8 * 2) and 0xFF).toByte()
+        array[0] = (value shr (8 * 3) and 0xFF).toByte()
+        return bin2str(array)
+    }
+
+    private fun hash(method: String): String
+    {
         val md = MessageDigest.getInstance(method)
-        FileInputStream(_file).use {
+        FileInputStream(file).use {
             var len = 0
-            val buf = ByteArray(bufferLen(length))
+            val buf = ByteArray(chooseBufferLength(length))
             while (it.read(buf).also { len = it } != -1)
                 md.update(buf, 0, len)
         }
         return bin2str(md.digest())
+    }
+
+    private fun chooseBufferLength(length: Long): Int
+    {
+        val kb = 1024
+        val mb = 1024 * 1024
+        val gb = 1024 * 1024 * 1024
+        return when {
+            length < 1 * mb -> 8 * kb
+            length < 2 * mb -> 16 * kb
+            length < 4 * mb -> 32 * kb
+            length < 8 * mb -> 64 * kb
+            length < 16 * mb -> 256 * kb
+            length < 32 * mb -> 512 * kb
+            length < 64 * mb -> 1 * mb
+            length < 128 * mb -> 2 * mb
+            length < 256 * mb -> 4 * mb
+            length < 512 * mb -> 8 * mb
+            length < 1 * gb -> 16 * mb
+            else -> 32 * mb
+        }
     }
 
     private fun bin2str(binary: ByteArray): String

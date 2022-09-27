@@ -7,7 +7,6 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import sun.rmi.runtime.Log
 import java.io.FileOutputStream
 import java.net.ConnectException
 import java.net.SocketException
@@ -43,7 +42,7 @@ object HttpUtil
     fun httpDownloadMutiple(
         client: OkHttpClient,
         urls: List<String>,
-        writeTo: FileObject,
+        writeTo: File2,
         lengthExpected: Long,
         noCache: String?,
         onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit,
@@ -117,7 +116,7 @@ object HttpUtil
     fun httpDownload(
         client: OkHttpClient,
         url: String,
-        writeTo: FileObject,
+        writeTo: File2,
         lengthExpected: Long,
         noCache: String?,
         onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit

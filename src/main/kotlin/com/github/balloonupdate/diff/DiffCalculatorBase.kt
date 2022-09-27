@@ -1,7 +1,7 @@
 package com.github.balloonupdate.diff
 
 import com.github.balloonupdate.data.HashAlgorithm
-import com.github.balloonupdate.util.FileObject
+import com.github.balloonupdate.util.File2
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
@@ -9,7 +9,7 @@ import com.github.kasuminova.Utils.HashCalculator
 import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 
-typealias OnScanCallback = (file: FileObject) -> Unit
+typealias OnScanCallback = (file: File2) -> Unit
 
 /**
  * 文件差异计算器的基本类
@@ -22,7 +22,7 @@ typealias OnScanCallback = (file: FileObject) -> Unit
  * @param opt 可调节的参数
  */
 abstract class DiffCalculatorBase(
-    val local: FileObject,
+    val local: File2,
     val remote: List<SimpleFileObject>,
     var opt: Options,
 ) {
@@ -33,7 +33,7 @@ abstract class DiffCalculatorBase(
     /**
      * 将一个文件文件或者目录标记为旧文件
      */
-    protected fun markAsOld(file: FileObject)
+    protected fun markAsOld(file: File2)
     {
         if(file.isDirectory)
         {
@@ -53,7 +53,7 @@ abstract class DiffCalculatorBase(
     /**
      * 将一个文件文件或者目录标记为新文件
      */
-    protected fun markAsNew(node: SimpleFileObject, dir: FileObject)
+    protected fun markAsNew(node: SimpleFileObject, dir: File2)
     {
         if(node is SimpleDirectory)
         {
@@ -97,10 +97,10 @@ abstract class DiffCalculatorBase(
     /**
      * 计算文件的哈希值
      */
-    protected fun calculateHash(file: FileObject): String
+    protected fun calculateHash(file: File2): String
     {
         return when (opt.hashAlgorithm) {
-            HashAlgorithm.CRC32 -> HashCalculator.getCRC32(file.file)
+            HashAlgorithm.CRC32 -> file.crc32
             HashAlgorithm.MD5 -> HashCalculator.getMD5(file.file)
             HashAlgorithm.SHA1 -> HashCalculator.getSHA1(file.file)
         }

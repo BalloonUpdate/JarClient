@@ -4,7 +4,6 @@ import com.github.balloonupdate.data.*
 import com.github.balloonupdate.diff.CommonModeCalculator
 import com.github.balloonupdate.diff.DiffCalculatorBase
 import com.github.balloonupdate.diff.OnceModeCalculator
-import com.github.balloonupdate.exception.FailedToParsingException
 import com.github.balloonupdate.gui.NewWindow
 import com.github.balloonupdate.localization.LangNodes
 import com.github.balloonupdate.localization.Localization
@@ -12,7 +11,6 @@ import com.github.balloonupdate.logging.LogSys
 import com.github.balloonupdate.util.*
 import okhttp3.OkHttpClient
 import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
 import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
@@ -21,8 +19,8 @@ import javax.swing.JOptionPane
 class WorkThread(
     val window: NewWindow?,
     val options: GlobalOptions,
-    val workDir: FileObject,
-    val updateDir: FileObject
+    val workDir: File2,
+    val updateDir: File2
 ): Thread() {
     /**
      * 更新助手工作线程

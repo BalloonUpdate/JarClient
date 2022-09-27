@@ -19,10 +19,10 @@ object EnvUtil
      * 获取当前Jar文件路径（仅打包后有效）
      */
     @JvmStatic
-    val jarFile: FileObject
+    val jarFile: File2
         get() {
         val url = URLDecoder.decode(EnvUtil.javaClass.protectionDomain.codeSource.location.file, "UTF-8").replace("\\", "/")
-        return FileObject(if (url.endsWith(".class") && "!" in url) {
+        return File2(if (url.endsWith(".class") && "!" in url) {
             val path = url.substring(0, url.lastIndexOf("!"))
             if ("file:/" in path) path.substring(path.indexOf("file:/") + "file:/".length) else path
         } else url)

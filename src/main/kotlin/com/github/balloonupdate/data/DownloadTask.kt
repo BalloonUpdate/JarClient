@@ -1,6 +1,6 @@
 package com.github.balloonupdate.data
 
-import com.github.balloonupdate.util.FileObject
+import com.github.balloonupdate.util.File2
 
 /**
  * 代表一个文件下载任务
@@ -24,7 +24,7 @@ data class DownloadTask(
     /**
      * 需要写出到的本地文件
      */
-    val file: FileObject,
+    val file: File2,
 
     /**
      * 下载时是否使用无缓存模式

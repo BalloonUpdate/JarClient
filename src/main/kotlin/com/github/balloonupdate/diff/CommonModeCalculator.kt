@@ -1,11 +1,10 @@
 package com.github.balloonupdate.diff
 
 import com.github.balloonupdate.logging.LogSys
-import com.github.balloonupdate.util.FileObject
+import com.github.balloonupdate.util.File2
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
-import com.github.kasuminova.Utils.HashCalculator
 import kotlin.math.abs
 
 /**
@@ -14,7 +13,7 @@ import kotlin.math.abs
  * 不匹配的文件会被忽略掉(不做任何变动)
  * 匹配的文件会与服务器进行同步
  */
-class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, opt: Options)
+class CommonModeCalculator(local: File2, remote: List<SimpleFileObject>, opt: Options)
     : DiffCalculatorBase(local, remote, opt)
 {
     override fun compare(onScan: OnScanCallback?)
@@ -31,9 +30,9 @@ class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, op
      * @param onScan 扫描回调，用于报告计算进度
      */
     private fun findOutNews(
-        local: FileObject,
+        local: File2,
         remote: List<SimpleFileObject>,
-        base: FileObject,
+        base: File2,
         onScan: OnScanCallback?,
         indent: String = ""
     ) {
@@ -82,7 +81,7 @@ class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, op
     /**
      * 对比两个路径相同的文件是否一致
      */
-    private fun compareSingleFile(l: FileObject, r: SimpleFile, indent: String)
+    private fun compareSingleFile(l: File2, r: SimpleFile, indent: String)
     {
         var isUpToDate = false
 
@@ -112,9 +111,9 @@ class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, op
      * @param onScan 扫描回调，用于报告计算进度
      */
     private fun findOutOlds(
-        local: FileObject,
+        local: File2,
         remote: List<SimpleFileObject>,
-        base: FileObject,
+        base: File2,
         onScan: OnScanCallback?,
         indent: String =""
     ) {
@@ -149,7 +148,7 @@ class CommonModeCalculator(local: FileObject, remote: List<SimpleFileObject>, op
     /**
      * 检查file是否满足间接匹配条件
      */
-    private fun checkIndirectMatches(file: FileObject, parent: String, indent: String =""): Boolean
+    private fun checkIndirectMatches(file: File2, parent: String, indent: String =""): Boolean
     {
         val parent1 = if(parent == "." || parent == "./") "" else parent
         val path = parent1 + (if(parent1 != "") "/" else "") + file.name
