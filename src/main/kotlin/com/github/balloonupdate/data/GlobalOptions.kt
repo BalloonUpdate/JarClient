@@ -68,6 +68,20 @@ data class GlobalOptions (
      */
     val disableTheme: Boolean,
 
+    /**
+     * 重试次数
+     */
+    val retryTimers: Int,
+
+    /**
+     * 窗口宽度
+     */
+    val windowWidth: Int,
+
+    /**
+     * 窗口高度
+     */
+    val windowHeight: Int
 ) {
     companion object {
         @JvmStatic
@@ -91,6 +105,9 @@ data class GlobalOptions (
                 httpWriteTimeout = getOption<Int>(map, "http-write-timeout") ?: 5000,
                 downloadThreads = getOption<Int>(map, "download-threads") ?: 4,
                 disableTheme = getOption<Boolean>(map, "disable-theme") ?: false,
+                retryTimers = getOption<Int>(map, "retry-timers") ?: 5,
+                windowWidth = getOption<Int>(map, "window-width") ?: 450,
+                windowHeight = getOption<Int>(map, "window-height") ?: 315,
             )
         }
 

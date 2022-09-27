@@ -65,4 +65,13 @@ check-modified: true
 # download-threads: 4
 
 # 是否禁用主题，如果更新时窗口出现无响应的问题，请尝试禁用主题
-# disable-theme: true
+# disable-theme: false
+
+# 出现网络问题时的重试次数
+# retry-timers: 5
+
+# 窗口宽度
+# window-width: 450
+
+# 窗口高度
+# window-height: 315

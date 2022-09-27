@@ -45,6 +45,7 @@ object HttpUtil
         writeTo: File2,
         lengthExpected: Long,
         noCache: String?,
+        retryTimes: Int,
         onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit,
         onSourceFallback: () -> Unit,
     ) {
@@ -53,7 +54,7 @@ object HttpUtil
         for (url in urls)
         {
             ex = try {
-                return httpDownload(client, url, writeTo, lengthExpected, noCache, onProgress)
+                return httpDownload(client, url, writeTo, lengthExpected, noCache, retryTimes, onProgress)
             } catch (e: ConnectionRejectedException) { e }
             catch (e: ConnectionInterruptedException) { e }
             catch (e: ConnectionTimeoutException) { e }
@@ -119,6 +120,7 @@ object HttpUtil
         writeTo: File2,
         lengthExpected: Long,
         noCache: String?,
+        retryTimes: Int,
         onProgress: (packageLength: Long, bytesReceived: Long, totalReceived: Long) -> Unit
     ) {
         var link = url.replace("+", "%2B")
@@ -150,7 +152,7 @@ object HttpUtil
         }
 
         var ex: Throwable? = null
-        var retries = 5
+        var retries = retryTimes
         while (--retries >= 0)
         {
             try {

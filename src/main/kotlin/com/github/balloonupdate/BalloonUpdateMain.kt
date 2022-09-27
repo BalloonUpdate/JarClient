@@ -57,7 +57,7 @@ class BalloonUpdateMain
                 SetupSwing.init()
 
             // 初始化UI
-            val window = if (graphicsMode) NewWindow() else null
+            val window = if (graphicsMode) NewWindow(options.windowWidth, options.windowHeight) else null
 //            val window: MainWin? = null
 
             // 将更新任务单独分进一个线程执行，方便随时打断线程

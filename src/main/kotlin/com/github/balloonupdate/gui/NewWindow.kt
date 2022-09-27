@@ -7,7 +7,7 @@ import java.awt.event.WindowEvent
 import java.awt.event.WindowListener
 import javax.swing.*
 
-class NewWindow
+class NewWindow(width: Int, height: Int)
 {
     var titleTextSuffix = ""
 
@@ -26,8 +26,7 @@ class NewWindow
         window.isUndecorated = false
         window.contentPane.layout = BorderLayout()
         window.isVisible = false
-        window.setSize(450, 315)
-//        window.setSize(850, 550)
+        window.setSize(width, height)
         window.defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
         window.setLocationRelativeTo(null)
         window.add(taskListScroll, BorderLayout.CENTER)
@@ -171,7 +170,7 @@ class NewWindow
         @JvmStatic
         fun main(args: Array<String>)
         {
-            val win = NewWindow()
+            val win = NewWindow(450, 315)
             win.window.isVisible = true
 
             val tr = win.createTaskRow()
