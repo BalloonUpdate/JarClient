@@ -17,14 +17,20 @@ object HttpUtil
     /**
      * 多可用源版本的httpFetch
      */
-    fun httpFetchJsonMutiple(client: OkHttpClient, urls: List<String>, noCache: String?, description: String, parseAsJsonObject: Boolean): Pair<JSONObject?, JSONArray?>
-    {
+    fun httpFetchJsonMutiple(
+        client: OkHttpClient,
+        urls: List<String>,
+        noCache: String?,
+        retryTimes: Int,
+        description: String,
+        parseAsJsonObject: Boolean
+    ): Pair<JSONObject?, JSONArray?> {
         var ex: Exception? = null
 
         for (url in urls)
         {
             ex = try {
-                return httpFetchJson(client, url, noCache, description, parseAsJsonObject)
+                return httpFetchJson(client, url, noCache, retryTimes, description, parseAsJsonObject)
             } catch (e: ConnectionRejectedException) { e }
             catch (e: ConnectionInterruptedException) { e }
             catch (e: ConnectionTimeoutException) { e }
@@ -77,8 +83,14 @@ object HttpUtil
      * @param parseAsJsonObject 是否解析成JsonObject对象，或者是JsonArray对象
      * @return 解析好的JsonObject对象，或者是JsonArray对象
      */
-    fun httpFetchJson(client: OkHttpClient, url: String, noCache: String?, description: String, parseAsJsonObject: Boolean): Pair<JSONObject?, JSONArray?>
-    {
+    fun httpFetchJson(
+        client: OkHttpClient,
+        url: String,
+        noCache: String?,
+        retryTimes: Int,
+        description: String,
+        parseAsJsonObject: Boolean
+    ): Pair<JSONObject?, JSONArray?> {
         var link = url
 
         if(noCache != null)
@@ -86,29 +98,43 @@ object HttpUtil
 
         val req = Request.Builder().url(link).build()
         LogSys.debug("http request on $link")
-        try {
-            client.newCall(req).execute().use { r ->
-                if(!r.isSuccessful)
-                {
-                    val body = r.body?.string()?.run { if(length> 300) substring(0, 300) + "\n..." else this }
-                    throw HttpResponseStatusCodeException(r.code, link, body)
-                }
 
-                val body = r.body!!.string()
+        var ex: Throwable? = null
+        var retries = retryTimes
+        while (--retries >= 0)
+        {
+            try {
+                client.newCall(req).execute().use { r ->
+                    if (!r.isSuccessful) {
+                        val body = r.body?.string()?.run { if (length > 300) substring(0, 300) + "\n..." else this }
+                        throw HttpResponseStatusCodeException(r.code, link, body)
+                    }
 
-                try {
-                    return if (parseAsJsonObject) Pair(JSONObject(body), null) else Pair(null, JSONArray(body))
-                } catch (e: JSONException) {
-                    throw FailedToParsingException(description, "json", "$url ${e.message}")
+                    val body = r.body!!.string()
+
+                    try {
+                        return if (parseAsJsonObject) Pair(JSONObject(body), null) else Pair(null, JSONArray(body))
+                    } catch (e: JSONException) {
+                        ex = FailedToParsingException(description, "json", "$url ${e.message}")
+                    }
                 }
+            } catch (e: ConnectException) {
+                ex = ConnectionRejectedException(link, e.message ?: "")
+            } catch (e: SocketException) {
+                ex = ConnectionInterruptedException(link, e.message ?: "")
+            } catch (e: SocketTimeoutException) {
+                ex = ConnectionTimeoutException(link, e.message ?: "")
             }
-        } catch (e: ConnectException) {
-            throw ConnectionRejectedException(link, e.message ?: "")
-        } catch (e: SocketException) {
-            throw ConnectionInterruptedException(link, e.message ?: "")
-        } catch (e: SocketTimeoutException) {
-            throw ConnectionTimeoutException(link, e.message ?: "")
+
+            LogSys.warn("")
+            LogSys.warn(ex.toString())
+            LogSys.warn("retrying $retries ...")
+
+            Thread.sleep(1000)
         }
+
+//        if (ex != null)
+        throw ex!!
     }
 
     /**

@@ -44,7 +44,7 @@ class WorkThread(
         window?.statusBarText = Localization[LangNodes.fetch_metadata]
 
         // 获取结构数据
-        val rawData = HttpUtil.httpFetchJsonMutiple(okClient, metaResponse.structureFileUrls, options.noCache, "结构文件请求", false).second!!
+        val rawData = HttpUtil.httpFetchJsonMutiple(okClient, metaResponse.structureFileUrls, options.noCache, options.retryTimers, "结构文件请求", false).second!!
         val remoteFiles: List<SimpleFileObject> =  unserializeFileStructure(JSONArray(rawData))
 
         // 使用版本缓存
@@ -344,7 +344,7 @@ class WorkThread(
             return def
         }
 
-        val meta = HttpUtil.httpFetchJsonMutiple(client, urls, noCache, "元数据文件请求", true).first!!
+        val meta = HttpUtil.httpFetchJsonMutiple(client, urls, noCache, options.retryTimers, "元数据文件请求", true).first!!
 
         val ha = if (meta.has("hash_algorithm")) (meta["hash_algorithm"] as String) else "sha1"
         val hashAlgorithm = HashAlgorithm.FromString(ha, HashAlgorithm.SHA1)
