@@ -1,6 +1,7 @@
 package com.github.balloonupdate
 
 import com.github.balloonupdate.data.*
+import com.github.balloonupdate.exception.BaseException
 import com.github.balloonupdate.exception.ConfigFileNotFoundException
 import com.github.balloonupdate.exception.FailedToParsingException
 import com.github.balloonupdate.exception.UpdateDirNotFoundException
@@ -102,7 +103,8 @@ class BalloonUpdateMain
 
                     if (graphicsMode)
                     {
-                        val errMessage = Utils.stringBreak(ex!!.message ?: "<No Exception Message>", 80)
+                        val className = if (ex!! !is BaseException) ex!!.javaClass.name + "\n" else ""
+                        val errMessage = Utils.stringBreak(className + (ex!!.message ?: "<No Exception Message>"), 80)
                         val title = "Error occurred ${EnvUtil.version}"
                         var content = errMessage + "\n"
                         content += if (!hasStandaloneProgress) "点击\"是\"显示错误详情并崩溃Minecraft，" else "点击\"是\"显示错误详情并退出，"

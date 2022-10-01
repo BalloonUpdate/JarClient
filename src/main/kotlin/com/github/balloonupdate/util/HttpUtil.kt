@@ -124,6 +124,8 @@ object HttpUtil
                 ex = ConnectionInterruptedException(link, e.message ?: "")
             } catch (e: SocketTimeoutException) {
                 ex = ConnectionTimeoutException(link, e.message ?: "")
+            } catch (e: Throwable) {
+                ex = e
             }
 
             LogSys.warn("")
@@ -207,6 +209,8 @@ object HttpUtil
                 ex = ConnectionRejectedException(link, e.message ?: "")
             } catch (e: SocketTimeoutException) {
                 ex = ConnectionTimeoutException(link, e.message ?: "")
+            } catch (e: Throwable) {
+                ex = e
             }
 
             LogSys.warn("")
