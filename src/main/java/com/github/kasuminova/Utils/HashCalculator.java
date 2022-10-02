@@ -34,21 +34,23 @@ public class HashCalculator {
     }
 
     /**
-     * 计算文件 CRC32
+     * 获取文件 CRC32
      * @param file 目标文件
-     * @return 文件的crc32
-     **/
+     * @return CRC32 值
+     */
     public static String getCRC32(File file) throws IOException {
-        FileChannel channel = FileChannel.open(Paths.get(file.toURI()), StandardOpenOption.READ);
-        ByteBuffer buffer = ByteBuffer.allocate(chooseBufferSize(file.length()));
+        FileChannel fc = FileChannel.open(Paths.get(file.toURI()), StandardOpenOption.READ);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(chooseBufferSize(file.length()));
         int len;
         CRC32 crc32 = new CRC32();
-        while ((len = channel.read(buffer)) > 0) {
-            crc32.update(buffer.array(), 0, len);
-            buffer.clear();
+        while ((len = fc.read(byteBuffer)) > 0) {
+            crc32.update(byteBuffer.array(), 0, len);
+            byteBuffer.clear();
         }
-        channel.close();
-        return String.valueOf(crc32.getValue());
+        fc.close();
+
+        //转换为 16 进制
+        return Integer.toHexString((int) crc32.getValue());
     }
 
     /**
