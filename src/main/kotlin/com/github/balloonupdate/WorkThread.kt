@@ -149,7 +149,7 @@ class WorkThread(
                 val lengthExpected = task.lengthExpected
                 val modified = task.modified
 
-                val sampler = SpeedSampler(500, 100)
+                val sampler = SpeedSampler(3000)
                 synchronized(lock) {
                     samplers += sampler
 
@@ -170,11 +170,11 @@ class WorkThread(
                     val currentProgress = received / total.toFloat() * 100
                     val totalProgress = totalBytesDownloaded / totalBytes.toFloat() * 100
 
-                    sampler.sample(packageLength)
+                    sampler.feed(packageLength)
                     val speed = sampler.speed()
 
                     // 每隔200ms更新一次ui
-                    if (System.currentTimeMillis() - time < 200)
+                    if (System.currentTimeMillis() - time < 400)
                         return@httpDownloadMutiple
                     time = System.currentTimeMillis()
 
