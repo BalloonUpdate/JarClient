@@ -13,7 +13,6 @@ import com.github.balloonupdate.logging.FileHandler
 import com.github.balloonupdate.logging.LogSys
 import com.github.balloonupdate.util.*
 import com.github.kasuminova.GUI.SetupSwing
-import com.github.kasuminova.Utils.HashCalculator
 import org.json.JSONException
 import org.yaml.snakeyaml.Yaml
 import java.awt.Desktop
@@ -22,6 +21,7 @@ import java.io.InterruptedIOException
 import java.lang.instrument.Instrumentation
 import java.nio.channels.ClosedByInterruptException
 import java.util.jar.JarFile
+import kotlin.system.exitProcess
 
 class BalloonUpdateMain
 {

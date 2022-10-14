@@ -5,7 +5,7 @@ import com.github.balloonupdate.util.File2
 import com.github.balloonupdate.data.SimpleDirectory
 import com.github.balloonupdate.data.SimpleFile
 import com.github.balloonupdate.data.SimpleFileObject
-import com.github.kasuminova.Utils.HashCalculator
+import com.github.balloonupdate.util.HashUtils
 import com.hrakaroo.glob.GlobPattern
 import java.lang.RuntimeException
 
@@ -100,9 +100,9 @@ abstract class DiffCalculatorBase(
     protected fun calculateHash(file: File2): String
     {
         return when (opt.hashAlgorithm) {
-            HashAlgorithm.CRC32 -> file.crc32
-            HashAlgorithm.MD5 -> HashCalculator.getMD5(file.file)
-            HashAlgorithm.SHA1 -> HashCalculator.getSHA1(file.file)
+            HashAlgorithm.CRC32 -> HashUtils.crc32(file._file)
+            HashAlgorithm.MD5 -> HashUtils.md5(file._file)
+            HashAlgorithm.SHA1 -> HashUtils.sha1(file._file)
         }
     }
 
