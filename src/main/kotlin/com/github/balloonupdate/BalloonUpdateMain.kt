@@ -21,7 +21,6 @@ import java.io.InterruptedIOException
 import java.lang.instrument.Instrumentation
 import java.nio.channels.ClosedByInterruptException
 import java.util.jar.JarFile
-import kotlin.system.exitProcess
 
 class BalloonUpdateMain
 {
@@ -33,8 +32,13 @@ class BalloonUpdateMain
      * @param enableLogFile 是否写入日志文件
      *
      */
-    fun run(graphicsMode: Boolean, hasStandaloneProgress: Boolean, externalConfigFile: File2?, enableLogFile: Boolean)
-    {
+    fun run(
+        graphicsMode: Boolean,
+        hasStandaloneProgress: Boolean,
+        externalConfigFile: File2?,
+        enableLogFile: Boolean,
+        disableTheme: Boolean,
+    ): Boolean {
         try {
             val workDir = getWorkDirectory()
             val progDir = getProgramDirectory(workDir)
@@ -54,7 +58,7 @@ class BalloonUpdateMain
             Localization.init(readLangs())
 
             // 应用主题
-            if (graphicsMode && !options.disableTheme)
+            if (graphicsMode && !disableTheme && !options.disableTheme)
                 SetupSwing.init()
 
             // 初始化UI
@@ -63,9 +67,9 @@ class BalloonUpdateMain
 
             // 将更新任务单独分进一个线程执行，方便随时打断线程
             var ex: Throwable? = null
-            val task = WorkThread(window, options, workDir, updateDir)
-            task.isDaemon = true
-            task.setUncaughtExceptionHandler { _, e -> ex = e }
+            val worktask = WorkThread(window, options, workDir, updateDir)
+            worktask.isDaemon = true
+            worktask.setUncaughtExceptionHandler { _, e -> ex = e }
 
             if (!options.quietMode)
                 window?.show()
@@ -75,12 +79,12 @@ class BalloonUpdateMain
             window?.statusBarText = Localization[LangNodes.connecting_message]
             window?.onWindowClosing?.once { win ->
                 win.hide()
-                if (task.isAlive)
-                    task.interrupt()
+                if (worktask.isAlive)
+                    worktask.interrupt()
             }
 
-            task.start()
-            task.join()
+            worktask.start()
+            worktask.join()
 
             window?.destroy()
 
@@ -131,6 +135,8 @@ class BalloonUpdateMain
                 } else {
                     LogSys.info("updating thread interrupted by user")
                 }
+            } else {
+                return worktask.difference!!.run { oldFiles.size + oldFolders.size + newFiles.size + newFolders.size } > 0
             }
         } catch (e: UpdateDirNotFoundException) {
             if (graphicsMode)
@@ -142,6 +148,8 @@ class BalloonUpdateMain
             if (graphicsMode)
                 DialogUtil.error("", e.message ?: "<No Exception Message>")
         }
+
+        return false
     }
 
     /**
@@ -267,7 +275,13 @@ class BalloonUpdateMain
         fun premain(agentArgs: String?, ins: Instrumentation?)
         {
             val useGraphicsMode = agentArgs != "windowless" && Desktop.isDesktopSupported()
-            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = false, externalConfigFile = null, enableLogFile = true)
+            BalloonUpdateMain().run(
+                graphicsMode = useGraphicsMode,
+                hasStandaloneProgress = false,
+                externalConfigFile = null,
+                enableLogFile = true,
+                disableTheme = false
+            )
             LogSys.info("finished!")
         }
 
@@ -278,8 +292,32 @@ class BalloonUpdateMain
         fun main(args: Array<String>)
         {
             val useGraphicsMode = !(args.isNotEmpty() && args[0] == "windowless") && Desktop.isDesktopSupported()
-            BalloonUpdateMain().run(graphicsMode = useGraphicsMode, hasStandaloneProgress = true, externalConfigFile = null, enableLogFile = true)
+            BalloonUpdateMain().run(
+                graphicsMode = useGraphicsMode,
+                hasStandaloneProgress = true,
+                externalConfigFile = null,
+                enableLogFile = true,
+                disableTheme = false
+            )
             LogSys.info("finished!")
+        }
+
+        /**
+         * 从ModLoader启动
+         * @return 是否有文件更新，如果有返回true。其它情况返回false
+         */
+        @JvmStatic
+        fun modloader(enableLogFile: Boolean, disableTheme: Boolean): Boolean
+        {
+            val result = BalloonUpdateMain().run(
+                graphicsMode = Desktop.isDesktopSupported(),
+                hasStandaloneProgress = false,
+                externalConfigFile = null,
+                enableLogFile = enableLogFile,
+                disableTheme = disableTheme
+            )
+            LogSys.info("finished!")
+            return result
         }
     }
 }

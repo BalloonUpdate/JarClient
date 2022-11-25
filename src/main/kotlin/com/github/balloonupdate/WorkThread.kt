@@ -22,6 +22,8 @@ class WorkThread(
     val workDir: File2,
     val updateDir: File2
 ): Thread() {
+    var difference: DiffCalculatorBase.Difference? = null
+
     /**
      * 更新助手工作线程
      */
@@ -179,7 +181,7 @@ class WorkThread(
                     time = System.currentTimeMillis()
 
 //                    val currProgressInString = String.format("%.1f", currentProgress)
-                    val totalProgressInString = String.format("%.1f", totalProgress)
+                    val totalProgressInString = if (totalProgress > 100) "114.514" else String.format("%.1f", totalProgress)
 
                     taskRow.borderText = file.name
                     taskRow.progressBarValue = (currentProgress * 10).toInt()
@@ -275,6 +277,8 @@ class WorkThread(
                 LogSys.info("成功更新${totalUpdated}个文件!")
             LogSys.info("程序结束，继续启动Minecraft！\n\n\n")
         }
+
+        difference = diff
     }
 
     /**
